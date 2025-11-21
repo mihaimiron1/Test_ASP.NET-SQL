@@ -1,0 +1,23 @@
+﻿@model List<MyApp.Models.Discipline>
+
+@{
+    ViewData["Title"] = "Disciplines List";
+}
+
+<table class="table">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var discipline in Model)
+    {
+        <tr>
+            <td>@discipline.Disciplina</td>
+            <td>@discipline.NrOrePlanDisciplina</td>
+        </tr>
+    }
+    </tbody>
+</table>
