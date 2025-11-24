@@ -1,50 +1,87 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - MyApp</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/MyApp.styles.css" asp-append-version="true" />
-</head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MyApp</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - MyApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <title>@ViewBag.Title</title>
+
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
+
+
+    <header class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto w-full px-6 py-6
+                flex items-center justify-between gap-8">
+
+            <!-- Stânga: Logo + titlu (click → home) -->
+            <a href="~/" class="flex items-center gap-6 group">
+
+                <!-- LOGO -->
+                <img src="~/images/cec-logo.png"
+                     class="w-auto"
+                     style="height: 100px; object-fit: contain;"
+                     alt="Logo instituție" />
+
+                <div class="flex flex-col">
+                    <h1 class="text-3xl font-bold tracking-tight text-gray-800
+                           group-hover:text-blue-600 transition">
+                        Comisia Electorală Centrală
+                    </h1>
+                    <span class="text-lg text-gray-500">
+                        A Republicii Moldova
+                    </span>
+                </div>
+            </a>
+
+            <!-- Dreapta: Select limba -->
+            <div>
+                <select class="border rounded-lg px-4 py-3 text-base shadow-sm
+                           focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option>RO</option>
+                    <option>RU</option>
+                    <option>EN</option>
+                </select>
+            </div>
+
+        </div>
+    </header>
+
+
+
+
+
+
+
+
+
+
+
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-6 py-10">
+        @RenderBody()
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="mt-16">
+
+        <!-- Bandă tricolor (stil modern, mai subtilă) -->
+        <div class="h-2 w-full bg-gradient-to-r from-red-600 via-yellow-400 to-blue-600"></div>
+
+        <div class="bg-white py-8">
+            <div class="max-w-7xl mx-auto text-center">
+                <p class="text-gray-600 text-sm">
+                    ©2025 Comisia Electorală Centrală.
+                </p>
+            </div>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+
 </body>
+
 </html>
