@@ -1,9 +1,37 @@
-using MyApp.Data;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
-var builder = WebApplication.CreateBuilder(args);
+using MyApp.Data;
+using System.Globalization;
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+
+var supportedCultures = new[]
+{
+    new CultureInfo("en-US"),
+    new CultureInfo("ru-RU"),
+    new CultureInfo("ro-RO") 
+};
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture("ro-RO");  // default language
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+
+    // Cookie provider should be first to check cookies before other providers
+    options.RequestCultureProviders.Insert(0, new CookieRequestCultureProvider());
+});
+
+// Database connection
+builder.Services
+    .AddControllersWithViews()
+    .AddViewLocalization()                
+    .AddDataAnnotationsLocalization();    
+
+
+
 builder.Services.AddDbContext<UniversitateaContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
 
@@ -13,13 +41,13 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-app.UseRouting();
+app.UseRequestLocalization();
 
+app.UseRouting();
 app.UseAuthorization();
 
 app.MapStaticAssets();

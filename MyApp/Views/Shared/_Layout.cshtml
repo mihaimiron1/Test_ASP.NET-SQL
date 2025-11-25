@@ -1,4 +1,15 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Localization
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+
+@{
+    var requestCulture = Context.Features.Get<IRequestCultureFeature>();
+    var currentCulture = requestCulture?.RequestCulture.Culture.Name ?? "ro-RO";
+}
+
+
+
+<!DOCTYPE html>
 <html lang="ro">
 
 <head>
@@ -10,10 +21,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
-
 <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
-
-
     <header class="bg-white shadow-md">
         <div class="max-w-7xl mx-auto w-full px-6 py-6
                 flex items-center justify-between gap-8">
@@ -30,36 +38,32 @@
                 <div class="flex flex-col">
                     <h1 class="text-3xl font-bold tracking-tight text-gray-800
                            group-hover:text-blue-600 transition">
-                        Comisia Electorală Centrală
+                        @Localizer["PageTitle"]
                     </h1>
                     <span class="text-lg text-gray-500">
-                        A Republicii Moldova
+                        @Localizer["PageSubtitle"]
                     </span>
                 </div>
             </a>
 
             <!-- Dreapta: Select limba -->
             <div>
-                <select class="border rounded-lg px-4 py-3 text-base shadow-sm
-                           focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option>RO</option>
-                    <option>RU</option>
-                    <option>EN</option>
-                </select>
+                <form asp-controller="Language" asp-action="ChangeLanguage" method="post">
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+
+                    <select name="culture"
+                            onchange="this.form.submit()"
+                            class="border rounded-lg px-4 py-3 text-base shadow-sm
+                                   focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer">
+                        <option value="ro-RO" selected="@(currentCulture == "ro-RO")">RO</option>
+                        <option value="ru-RU" selected="@(currentCulture == "ru-RU")">RU</option>
+                        <option value="en-US" selected="@(currentCulture == "en-US")">EN</option>
+                    </select>
+                </form>
             </div>
 
         </div>
     </header>
-
-
-
-
-
-
-
-
-
-
 
 
     <!-- MAIN CONTENT -->
