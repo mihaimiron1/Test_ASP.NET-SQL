@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿
+
+<!DOCTYPE html>
 <html lang="ro">
 
 <head>
@@ -30,23 +32,64 @@
                 <div class="flex flex-col">
                     <h1 class="text-3xl font-bold tracking-tight text-gray-800
                            group-hover:text-blue-600 transition">
-                        Comisia Electorală Centrală
+                        @Localizer["Title"]
                     </h1>
                     <span class="text-lg text-gray-500">
-                        A Republicii Moldova
+                        @Localizer["SubTitle"]
                     </span>
                 </div>
             </a>
 
             <!-- Dreapta: Select limba -->
-            <div>
-                <select class="border rounded-lg px-4 py-3 text-base shadow-sm
-                           focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option>RO</option>
-                    <option>RU</option>
-                    <option>EN</option>
-                </select>
+            <div class="relative inline-block">
+                <button class="border rounded-lg px-4 py-3 text-base shadow-sm
+                   focus:ring-2 focus:ring-blue-500 focus:outline-none
+                   hover:bg-gray-50 transition flex items-center gap-2"
+                        type="button"
+                        onclick="toggleDropdown()">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>@System.Globalization.CultureInfo.CurrentCulture.DisplayName</span>
+                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+
+                <ul id="languageDropdown"
+                    class="hidden absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-50">
+                    <li>
+                        <a class="block px-4 py-2 hover:bg-gray-100 transition rounded-t-lg"
+                           asp-controller="Language"
+                           asp-action="Index"
+                           asp-route-culture="ro">
+                            Română
+                        </a>
+                    </li>
+                    <li>
+                        <a class="block px-4 py-2 hover:bg-gray-100 transition"
+                           asp-controller="Language"
+                           asp-action="Index"
+                           asp-route-culture="ru">
+                            Русский
+                        </a>
+                    </li>
+                </ul>
             </div>
+            <script>
+                function toggleDropdown() {
+                    const dropdown = document.getElementById('languageDropdown');
+                    dropdown.classList.toggle('hidden');
+                }
+
+                // Închide dropdown când dai click în afara lui
+                window.addEventListener('click', function(e) {
+                    const dropdown = document.getElementById('languageDropdown');
+                    if (!e.target.closest('button') && !dropdown.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                    }
+                });
+            </script>
 
         </div>
     </header>
@@ -54,6 +97,7 @@
 
 
 
+    
 
 
 
