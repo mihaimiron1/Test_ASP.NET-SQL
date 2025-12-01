@@ -1,26 +1,9 @@
-using Microsoft.AspNetCore.Localization;
-using Microsoft.EntityFrameworkCore;
 using MyApp.Data;
-using System.Globalization;
-
+using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
-
-
-var supportedCultures = new[]
-{
-    new CultureInfo("en-US"),
-    new CultureInfo("ru-RU"),
-    new CultureInfo("ro-RO") 
-};
-
-builder.Services.Configure<RequestLocalizationOptions>(options =>
-{
-    options.DefaultRequestCulture = new RequestCulture("ro-RO");  // default language
-    options.SupportedCultures = supportedCultures;
-    options.SupportedUICultures = supportedCultures;
 
 // Add services to the container.
+
 builder.Services.AddControllersWithViews()
     .AddViewLocalization();
 
@@ -46,15 +29,15 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseRequestLocalization();
 
 app.UseHttpsRedirection();
-app.UseRequestLocalization();
-
 app.UseRouting();
+
 app.UseAuthorization();
 
 app.MapStaticAssets();
