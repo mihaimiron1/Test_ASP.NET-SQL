@@ -117,22 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AlegeriLocale25" xml:space="preserve">
-    <value>Alegeri Locale în Republica Moldova 2025</value>
-  </data>
-  <data name="Copyright" xml:space="preserve">
-    <value>2025 Comisia Electorală Centrală</value>
-  </data>
-  <data name="Rezultate" xml:space="preserve">
-    <value>Rezultate</value>
-  </data>
-  <data name="Statistici" xml:space="preserve">
-    <value>Date Statistice</value>
-  </data>
-  <data name="SubTitle" xml:space="preserve">
-    <value>A Republicii Moldova</value>
-  </data>
-  <data name="Title" xml:space="preserve">
-    <value>Comisia Electorală Centrală</value>
-  </data>
 </root>

@@ -4,8 +4,10 @@ using MyApp.Models;
 
 namespace MyApp.Controllers
 {
-    public class HomeController : Controller
+    public class RezultateController : Controller
     {
+
+
         public IActionResult Index()
         {
             return View();
@@ -15,11 +17,31 @@ namespace MyApp.Controllers
         {
             return View();
         }
-
-        public IActionResult Rezultate()
+        
+        public IActionResult ConsilieriMunicipali()
         {
             return View();
         }
+        public IActionResult ConsilieriLocali()
+        {
+            return View();
+        }
+
+        public IActionResult ConsilieriRaionali()
+        {
+            return View();
+        }
+
+        public IActionResult PrimariMunicipali()
+        {
+            return View();
+        }
+
+        public IActionResult PrimariLocali()
+        {
+            return View();
+        }
+
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

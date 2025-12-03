@@ -117,8 +117,17 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AlegeriLocale25" xml:space="preserve">
+    <value>Местные выборы в Республике Молдова 2025 года</value>
+  </data>
   <data name="Copyright" xml:space="preserve">
     <value>2025 Центральная Избирательная Комиссия</value>
+  </data>
+  <data name="Rezultate" xml:space="preserve">
+    <value>Результаты</value>
+  </data>
+  <data name="Statistici" xml:space="preserve">
+    <value>Статистика</value>
   </data>
   <data name="SubTitle" xml:space="preserve">
     <value>Республики Молдова</value>
