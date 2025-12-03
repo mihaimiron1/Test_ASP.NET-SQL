@@ -12,37 +12,37 @@
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
     <header class="bg-white shadow-md">
-        <div class="max-w-7xl mx-auto w-full px-6 py-6
-                flex items-center justify-between gap-8">
+        <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 sm:py-6
+                flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-8">
 
             <!-- Stânga: Logo + titlu (click → home) -->
-            <a href="~/" class="flex items-center gap-6 group">
+            <a href="~/" class="flex items-center gap-3 sm:gap-6 group w-full sm:w-auto justify-center sm:justify-start">
 
                 <!-- LOGO -->
                 <img src="~/images/cec-logo.png"
                      class="w-auto"
-                     style="height: 100px; object-fit: contain;"
+                     style="height: 60px; object-fit: contain;"
                      alt="Logo instituție" />
 
-                <div class="flex flex-col">
-                    <h1 class="text-3xl font-bold tracking-tight text-gray-800
+                <div class="flex flex-col text-center sm:text-left">
+                    <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-800
                            group-hover:text-blue-600 transition">
                         @Localizer["Title"]
                     </h1>
-                    <span class="text-lg text-gray-500">
+                    <span class="text-sm sm:text-base lg:text-lg text-gray-500">
                         @Localizer["SubTitle"]
                     </span>
                 </div>
             </a>
 
             <!-- Dreapta: Select limba -->
-            <div class="relative inline-block">
-                <button class="border rounded-lg px-4 py-3 text-base shadow-sm
+            <div class="relative inline-block w-full sm:w-auto">
+                <button class="border rounded-lg px-4 py-2 sm:py-3 text-sm sm:text-base shadow-sm
                    focus:ring-2 focus:ring-blue-500 focus:outline-none
-                   hover:bg-gray-50 transition flex items-center gap-2"
+                   hover:bg-gray-50 transition flex items-center justify-center gap-2 w-full sm:w-auto"
                         type="button"
                         onclick="toggleDropdown()">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"></path>
                     </svg>
                     <span>@System.Globalization.CultureInfo.CurrentCulture.DisplayName</span>
@@ -52,7 +52,7 @@
                 </button>
 
                 <ul id="languageDropdown"
-                    class="hidden absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-50">
+                    class="hidden absolute right-0 sm:right-0 left-0 sm:left-auto mt-2 w-full sm:w-40 bg-white border rounded-lg shadow-lg z-50">
                     <li>
                         <a class="block px-4 py-2 hover:bg-gray-100 transition rounded-t-lg"
                            asp-controller="Language"
@@ -62,7 +62,7 @@
                         </a>
                     </li>
                     <li>
-                        <a class="block px-4 py-2 hover:bg-gray-100 transition"
+                        <a class="block px-4 py-2 hover:bg-gray-100 transition rounded-b-lg"
                            asp-controller="Language"
                            asp-action="Index"
                            asp-route-culture="ru">
@@ -89,93 +89,61 @@
         </div>
     </header>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     <!-- MAIN CONTENT -->
-    <main class="flex-1 w-full max-w-7xl mx-auto px-6 py-10">
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
 
+        <!-- Secțiune Alegeri -->
+        <div class="bg-white rounded-lg shadow-md p-4 sm:p-8 mb-6 sm:mb-8">
+            <!-- Titlu -->
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6 text-center">
+                Alegeri Locale în Republica Moldova 2025
+            </h2>
 
-        
+            <!-- Butoane lipite (responsive) -->
+            <div class="flex justify-center">
+                <div class="inline-flex flex-col sm:flex-row rounded-lg shadow-sm w-full sm:w-auto max-w-md sm:max-w-none">
+                    <!-- Buton Rezultate Preliminare (activ) -->
+                    <a href="~/Rezultate/Preliminare"
+                       class="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-blue-600 text-white
+                              font-medium rounded-t-lg sm:rounded-l-lg sm:rounded-tr-none hover:bg-blue-700
+                              transition-colors duration-200 w-full sm:w-64
+                              border-b sm:border-b-0 sm:border-r border-blue-700">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span class="text-sm sm:text-base">Rezultate Preliminare</span>
+                    </a>
 
-
-
-
-
-    <!-- Secțiune Alegeri -->
-<!-- Secțiune Alegeri -->
-<div class="bg-white rounded-lg shadow-md p-8 mb-8">
-    <!-- Titlu -->
-    <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 text-center px-4">
-        Alegeri Locale în Republica Moldova 2025
-    </h2>
-    
-    <!-- Butoane lipite (responsive) -->
-    <div class="flex justify-center px-4">
-        <div class="inline-flex flex-col sm:flex-row rounded-lg shadow-sm w-full sm:w-auto max-w-md sm:max-w-none">
-            <!-- Buton Rezultate Preliminare (activ) -->
-            <a href="~/Rezultate/Preliminare" 
-               class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white 
-                      font-medium rounded-t-lg sm:rounded-l-lg sm:rounded-tr-none hover:bg-blue-700 
-                      transition-colors duration-200 w-full sm:w-64 
-                      border-b sm:border-b-0 sm:border-r border-blue-700">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                <span class="text-sm sm:text-base">Rezultate Preliminare</span>
-            </a>
-
-            <!-- Buton Statistici (inactiv) -->
-            <a href="~/Statistici/Index" 
-               class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 
-                      font-medium rounded-b-lg sm:rounded-r-lg sm:rounded-bl-none hover:bg-gray-300 
-                      transition-colors duration-200 w-full sm:w-64">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
-                </svg>
-                <span class="text-sm sm:text-base">Statistici</span>
-            </a>
+                    <!-- Buton Statistici (inactiv) -->
+                    <a href="~/Statistici/Index"
+                       class="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-gray-200 text-gray-700
+                              font-medium rounded-b-lg sm:rounded-r-lg sm:rounded-bl-none hover:bg-gray-300
+                              transition-colors duration-200 w-full sm:w-64">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                        </svg>
+                        <span class="text-sm sm:text-base">Statistici</span>
+                    </a>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
-
-
-
-
-
-
-
-
-
 
         @RenderBody()
     </main>
 
     <!-- FOOTER -->
-    <footer class="mt-16">
+    <footer class="mt-8 sm:mt-16">
 
         <!-- Bandă tricolor (stil modern, mai subtilă) -->
         <div class="h-2 w-full bg-gradient-to-r from-red-600 via-yellow-400 to-blue-600"></div>
 
-        <div class="bg-white py-8">
-            <div class="max-w-7xl mx-auto text-center">
-                <p class="text-gray-600 text-sm">
+        <div class="bg-white py-6 sm:py-8">
+            <div class="max-w-7xl mx-auto text-center px-4">
+                <p class="text-gray-600 text-xs sm:text-sm">
                     ©@Localizer["Copyright"]
                 </p>
             </div>
