@@ -9,20 +9,22 @@
 
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="~/css/output.css" />
+    <script src="~/js/site.js"></script>
+
 </head>
+
 <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
     <header class="bg-white shadow-md">
         <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 sm:py-6
                 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-8">
 
             <!-- Stânga: Logo + titlu (click → home) -->
-            <a href="~/" class="flex items-center gap-3 sm:gap-6 group w-full sm:w-auto justify-center sm:justify-start">
+            <a href="~/"
+                class="flex items-center gap-3 sm:gap-6 group w-full sm:w-auto justify-center sm:justify-start">
 
                 <!-- LOGO -->
-                <img src="~/images/cec-logo.png"
-                     class="w-auto"
-                     style="height: 60px; object-fit: contain;"
-                     alt="Logo instituție" />
+                <img src="~/images/cec-logo.png" class="w-auto" style="height: 60px; object-fit: contain;"
+                    alt="Logo instituție" />
 
                 <div class="flex flex-col text-center sm:text-left">
                     <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-800
@@ -39,33 +41,32 @@
             <div class="relative inline-block w-full sm:w-auto">
                 <button class="border rounded-lg px-4 py-2 sm:py-3 text-sm sm:text-base shadow-sm
                    focus:ring-2 focus:ring-blue-500 focus:outline-none
-                   hover:bg-gray-50 transition flex items-center justify-center gap-2 w-full sm:w-auto"
-                        type="button"
-                        onclick="toggleDropdown()">
+                   hover:bg-gray-50 transition flex items-center justify-center gap-2 w-full sm:w-auto" type="button"
+                    onclick="toggleDropdown()">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"></path>
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z"
+                            clip-rule="evenodd"></path>
                     </svg>
                     <span>@System.Globalization.CultureInfo.CurrentCulture.DisplayName</span>
                     <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        <path fill-rule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clip-rule="evenodd"></path>
                     </svg>
                 </button>
 
                 <ul id="languageDropdown"
                     class="hidden absolute right-0 sm:right-0 left-0 sm:left-auto mt-2 w-full sm:w-40 bg-white border rounded-lg shadow-lg z-50">
                     <li>
-                        <a class="block px-4 py-2 hover:bg-gray-100 transition rounded-t-lg"
-                           asp-controller="Language"
-                           asp-action="Index"
-                           asp-route-culture="ro">
+                        <a class="block px-4 py-2 hover:bg-gray-100 transition rounded-t-lg" asp-controller="Language"
+                            asp-action="Index" asp-route-culture="ro">
                             Română
                         </a>
                     </li>
                     <li>
-                        <a class="block px-4 py-2 hover:bg-gray-100 transition rounded-b-lg"
-                           asp-controller="Language"
-                           asp-action="Index"
-                           asp-route-culture="ru">
+                        <a class="block px-4 py-2 hover:bg-gray-100 transition rounded-b-lg" asp-controller="Language"
+                            asp-action="Index" asp-route-culture="ru">
                             Русский
                         </a>
                     </li>
@@ -78,7 +79,7 @@
                 }
 
                 // Închide dropdown când dai click în afara lui
-                window.addEventListener('click', function(e) {
+                window.addEventListener('click', function (e) {
                     const dropdown = document.getElementById('languageDropdown');
                     if (!e.target.closest('button') && !dropdown.contains(e.target)) {
                         dropdown.classList.add('hidden');
@@ -107,7 +108,7 @@
             @{
                 var controller = ViewContext.RouteData.Values["controller"]?.ToString();
                 var action = ViewContext.RouteData.Values["action"]?.ToString();
-                var isRezultate = (controller == "Rezultate" && action == "ConsilieriRaionali" 
+                var isRezultate = (controller == "Rezultate" && action == "ConsilieriRaionali"
                 || controller == "Rezultate" && action == "ConsilieriMunicipali"
                 || controller == "Rezultate" && action == "ConsilieriLocali"
                 || controller == "Rezultate" && action == "PrimariLocali"
@@ -116,48 +117,216 @@
             }
             <!-- Butoane lipite (responsive) -->
             <div class="flex justify-center">
-                <div class="inline-flex flex-col sm:flex-row rounded-lg shadow-sm w-full sm:w-auto max-w-md sm:max-w-none">
+                <div
+                    class="inline-flex flex-col sm:flex-row rounded-lg shadow-sm w-full sm:w-auto max-w-md sm:max-w-none">
                     <!-- Buton Rezultate Preliminare -->
-                    <a href="@Url.Action("ConsilieriRaionali", "Rezultate")"
-                       class="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-3
+                    <a href="@Url.Action("ConsilieriRaionali", "Rezultate")" class="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-3
               @(isRezultate ? "bg-blue-600 text-white border-blue-700 hover:bg-blue-700" : "bg-gray-200 text-gray-700 hover:bg-gray-300")
               font-medium rounded-t-lg sm:rounded-l-lg sm:rounded-tr-none
               transition-all duration-300 ease-in-out w-full sm:w-64
               border-b sm:border-b-0 sm:border-r @(isRezultate ? "border-blue-700" : "border-gray-300")
               transform hover:scale-[1.02] active:scale-[0.98]">
-                        <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-300 ease-in-out"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-300 ease-in-out" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
                         </svg>
                         <span class="text-sm sm:text-base transition-all duration-300">@Localizer["Rezultate"]</span>
                     </a>
                     <!-- Buton Statistici -->
-                    <a href="@Url.Action("Statistici", "Rezultate")"
-                       class="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-3
+                    <a href="@Url.Action("Statistici", "Rezultate")" class="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-3
               @(isStatistici ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-700 hover:bg-gray-300")
               font-medium rounded-b-lg sm:rounded-r-lg sm:rounded-bl-none
               transition-all duration-300 ease-in-out w-full sm:w-64
               transform hover:scale-[1.02] active:scale-[0.98]">
-                        <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-300 ease-in-out"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 flex-shrink-0 transition-transform duration-300 ease-in-out" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                                d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                                d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
                         </svg>
                         <span class="text-sm sm:text-base transition-all duration-300">@Localizer["Statistici"]</span>
                     </a>
                 </div>
             </div>
-        
 
-                
 
-                
-           
 
-        @RenderBody()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <div
+                class="max-w-sm w-full bg-neutral-primary-soft border border-default rounded-base shadow-xs p-4 md:p-6">
+                <div class="flex justify-between border-light border-b pb-3">
+                    <dl>
+                        <dt class="text-body">Profit</dt>
+                        <dd class="text-2xl font-semibold text-heading">$5,405</dd>
+                    </dl>
+                    <div>
+                        <span
+                            class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-1.5 py-0.5 rounded">
+                            <svg class="w-4 h-4 me-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
+                                height="24" fill="none" viewBox="0 0 24 24">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2" d="M12 6v13m0-13 4 4m-4-4-4 4" />
+                            </svg>
+                            Profit rate 23.5%
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 py-3">
+                    <dl>
+                        <dt class="text-body">Income</dt>
+                        <dd class="text-lg font-semibold text-fg-success">$23,635</dd>
+                    </dl>
+                    <dl>
+                        <dt class="text-body">Expense</dt>
+                        <dd class="text-lg font-semibold text-fg-danger">-$18,230</dd>
+                    </dl>
+                </div>
+
+                <div id="bar-chart"></div>
+
+                <div class="grid grid-cols-1 items-center border-light border-t justify-between">
+                    <div class="flex justify-between items-center pt-4 md:pt-6">
+                        <!-- Button -->
+                        <button id="dropdownLastDays3Button" data-dropdown-toggle="LastDays3dropdown"
+                            data-dropdown-placement="bottom"
+                            class="text-sm font-medium text-body hover:text-heading text-center inline-flex items-center"
+                            type="button">
+                            Last 7 days
+                            <svg class="w-4 h-4 ms-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
+                                height="24" fill="none" viewBox="0 0 24 24">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2" d="m19 9-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <!-- Dropdown menu -->
+                        <div id="LastDays3dropdown"
+                            class="z-10 hidden bg-neutral-primary-medium border border-default-medium rounded-base shadow-lg w-44">
+                            <ul class="p-2 text-sm text-body font-medium" aria-labelledby="dropdownLastDays3Button">
+                                <li>
+                                    <a href="#"
+                                        class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded">Yesterday</a>
+                                </li>
+                                <li>
+                                    <a href="#"
+                                        class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded">Today</a>
+                                </li>
+                                <li>
+                                    <a href="#"
+                                        class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded">Last
+                                        7 days</a>
+                                </li>
+                                <li>
+                                    <a href="#"
+                                        class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded">Last
+                                        30 days</a>
+                                </li>
+                                <li>
+                                    <a href="#"
+                                        class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded">Last
+                                        90 days</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <a href="#"
+                            class="inline-flex items-center text-fg-brand bg-transparent box-border border border-transparent hover:bg-neutral-secondary-medium focus:ring-4 focus:ring-neutral-tertiary font-medium leading-5 rounded-base text-sm px-3 py-2 focus:outline-none">
+                            Revenue Report
+                            <svg class="w-4 h-4 ms-1.5 -me-0.5 rtl:rotate-180" aria-hidden="true"
+                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                                viewBox="0 0 24 24">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            @RenderBody()
         </div>
 
 
@@ -177,6 +346,7 @@
             </div>
         </div>
     </footer>
+    <script src="./node_modules/flowbite/dist/flowbite.min.js"></script>
 
 </body>
 

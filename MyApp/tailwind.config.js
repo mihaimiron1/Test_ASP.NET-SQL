@@ -1,10 +1,14 @@
 ﻿module.exports = {
   content: [
     "./Views/**/*.cshtml",
-    "./wwwroot/**/*.js"
+        "./wwwroot/**/*.js",
+        './node_modules/flowbite/**/*.js',
+        "./node_modules/apexcharts/**/*.js",
   ],
   theme: {
     extend: {},
   },
-  plugins: [],
+    plugins: [
+        require('flowbite/plugin'),
+    ],
 }
