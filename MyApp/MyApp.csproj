@@ -25,6 +25,30 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="Resources\Views\Rezultate\PrimariMunicipali.ru.resx">
+      <SubType>Designer</SubType>
+      <Generator></Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Views\Rezultate\PrimariMunicipali.ro.resx">
+      <SubType>Designer</SubType>
+      <Generator></Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Views\Rezultate\PrimariLocali.ru.resx">
+      <SubType>Designer</SubType>
+      <Generator></Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Views\Rezultate\PrimariLocali.ro.resx">
+      <SubType>Designer</SubType>
+      <Generator></Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Views\Rezultate\ConsilieriRaionali.ru.resx">
+      <SubType>Designer</SubType>
+      <Generator></Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Views\Rezultate\ConsilieriRaionali.ro.resx">
+      <SubType>Designer</SubType>
+      <Generator></Generator>
+    </EmbeddedResource>
     <EmbeddedResource Update="Resources\Views\Rezultate\ConsilieriMunicipali.ru.resx">
       <SubType>Designer</SubType>
       <Generator></Generator>

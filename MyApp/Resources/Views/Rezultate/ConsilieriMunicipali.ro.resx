@@ -117,4 +117,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ConsilieriLocali" xml:space="preserve">
+    <value>Consilieri Locali</value>
+  </data>
+  <data name="ConsilieriMunicipali" xml:space="preserve">
+    <value>Consilieri Municipali</value>
+  </data>
+  <data name="ConsilieriRaionali" xml:space="preserve">
+    <value>Consilieri Raionali</value>
+  </data>
+  <data name="PrimariLocali" xml:space="preserve">
+    <value>Primari Locali</value>
+  </data>
+  <data name="PrimariMunicipali" xml:space="preserve">
+    <value>Primari Municipali</value>
+  </data>
 </root>
