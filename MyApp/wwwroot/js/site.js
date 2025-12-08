@@ -108,7 +108,7 @@
     const chartHost = document.getElementById("donut-chart");
     if (chartHost && typeof ApexCharts !== 'undefined') {
         const rawPresence = Number(chartHost.dataset.presence);
-        const presenceValue = clampPercent(Number.isFinite(rawPresence) ? rawPresence : 63);
+        const presenceValue = clampPercent(Number.isFinite(rawPresence) ? rawPresence : 0);
 
         // Prevent duplicate renders (e.g., partial reloads) by destroying any existing chart
         if (chartHost.__apexInstance) {
@@ -167,3 +167,44 @@
 
 
 
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('age-participation-chart');
+    if (!container) return;
+
+    const ageData = JSON.parse(container.getAttribute('data-age-data') || "[]");
+
+    // Generează HTML
+    const barsHTML = ageData.map(item => {
+        const group = item.Group ?? "";
+        const percentage = Number(item.Percentage) ?? 0;
+        const safeWidth = Math.min(Math.max(percentage, 0), 100);
+        return `
+        <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+            <div class="w-12 sm:w-16 text-xs sm:text-sm font-medium text-gray-700 text-right">
+                ${group}
+            </div>
+            <div class="flex-1 relative">
+                <div class="w-full h-8 sm:h-10 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-1000 ease-out"
+                         style="width: 0%; background-color: #2d5cf2"
+                         style="width: 0%"
+                         data-width="${safeWidth}%">
+                    </div>
+                </div>
+            </div>
+            <div class="w-10 sm:w-12 text-xs sm:text-sm font-semibold text-gray-800">
+                ${safeWidth}%
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    container.innerHTML = barsHTML;
+
+    // Animație
+    setTimeout(() => {
+        container.querySelectorAll('[data-width]').forEach(bar => {
+            bar.style.width = bar.getAttribute('data-width');
+        });
+    }, 100);
+});

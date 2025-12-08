@@ -1,6 +1,7 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using MyApp.Models;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace MyApp.Controllers
 {
@@ -15,6 +16,20 @@ namespace MyApp.Controllers
 
         public IActionResult Statistici()
         {
+            // Prezența la vot (procente)
+            ViewBag.Prezenta = 80;
+
+            var ageData = new[]
+            {
+                new { Group = "18-25", Percentage = 42 },
+                new { Group = "26-35", Percentage = 58 },
+                new { Group = "36-45", Percentage = 64 },
+                new { Group = "46-55", Percentage = 71 },
+                new { Group = "56-65", Percentage = 78 },
+                new { Group = "65+", Percentage = 82 }
+            };
+
+            ViewBag.AgeData = JsonSerializer.Serialize(ageData);
             return View();
         }
         
