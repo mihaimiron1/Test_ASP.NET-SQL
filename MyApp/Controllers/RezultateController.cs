@@ -19,6 +19,10 @@ namespace MyApp.Controllers
             // Prezența la vot (procente)
             ViewBag.Prezenta = 80;
 
+            // Distribuție gen (procente) pentru pie-chart de lângă hartă
+            ViewBag.Femei = 60;
+            ViewBag.Barbati = 40;
+
             var ageData = new[]
             {
                 new { Group = "18-25", Percentage = 42 },
