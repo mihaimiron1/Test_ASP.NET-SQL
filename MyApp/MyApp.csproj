@@ -18,10 +18,24 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
-	<Target Name="Tailwind" BeforeTargets="Build">
-		<Exec Command="npm run css:build" />
+
+
+
+	<Target Name="EnsureNodeModules" BeforeTargets="Tailwind">
+		<Message Text="Verificare dependențe npm..." Importance="high" />
+		<Exec Command="npm install"
+			  Condition="!Exists('node_modules')"
+			  ContinueOnError="false" />
 	</Target>
-  <ItemGroup>
+
+	<Target Name="Tailwind" BeforeTargets="Build" DependsOnTargets="EnsureNodeModules">
+		<Exec Command="npm run css:build"
+			  ContinueOnError="true" />
+	</Target>
+
+
+
+	<ItemGroup>
     <Folder Include="Data\" />
     <Folder Include="wwwroot\images\" />
   </ItemGroup>
