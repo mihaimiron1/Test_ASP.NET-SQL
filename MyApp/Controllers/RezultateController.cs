@@ -19,6 +19,13 @@ namespace MyApp.Controllers
             // Prezența la vot (procente)
             ViewBag.Prezenta = 80;
 
+            // Participare pe gen (procente)
+            var genderData = new[]
+            {
+                new { Label = "Femei", Value = 60 },
+                new { Label = "Bărbați", Value = 40 }
+            };
+
             var ageData = new[]
             {
                 new { Group = "18-25", Percentage = 42 },
@@ -29,6 +36,7 @@ namespace MyApp.Controllers
                 new { Group = "65+", Percentage = 82 }
             };
 
+            ViewBag.GenderData = JsonSerializer.Serialize(genderData);
             ViewBag.AgeData = JsonSerializer.Serialize(ageData);
             return View();
         }

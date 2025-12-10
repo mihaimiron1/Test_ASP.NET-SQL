@@ -264,10 +264,41 @@ const brandSecondaryColor = getBrandSecondaryColor();
 const brandTertiaryColor = getBrandTertiaryColor();
 const neutralPrimaryColor = getNeutralPrimaryColor();
 
-const getChartOptions = () => {
+// Inverse a hex color (#RRGGBB) to get a complementary tone (used for Femei)
+const invertHexColor = (hex) => {
+    if (!hex || typeof hex !== "string") return null;
+    const normalized = hex.trim().replace("#", "");
+    if (normalized.length !== 6) return null;
+
+    const num = parseInt(normalized, 16);
+    if (Number.isNaN(num)) return null;
+
+    const inverted = (0xFFFFFF ^ num).toString(16).padStart(6, "0");
+    return `#${inverted.toUpperCase()}`;
+};
+
+const parseGenderData = (el) => {
+    const raw = el?.dataset?.gender;
+    if (!raw) return null;
+
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : null;
+    } catch {
+        return null;
+    }
+};
+
+const getChartOptions = (chartEl) => {
+    const genderData = parseGenderData(chartEl);
+    const series = genderData?.map(item => Number(item.Value ?? item.value)).filter(val => !Number.isNaN(val)) ?? [60, 40];
+    const labels = genderData?.map(item => item.Label ?? item.label) ?? ["Femei", "Bărbați"];
+    const maleColor = brandColor;
+    const femaleColor = invertHexColor(maleColor) ?? "#F76C82"; // soft red-rose fallback
+
     return {
-        series: [52.8, 26.8, 20.4],
-        colors: [brandColor, brandSecondaryColor, brandTertiaryColor],
+        series,
+        colors: [femaleColor, maleColor],
         chart: {
             height: 420,
             width: "100%",
@@ -288,7 +319,7 @@ const getChartOptions = () => {
                 }
             },
         },
-        labels: ["Direct", "Organic search", "Referrals"],
+        labels,
         dataLabels: {
             enabled: true,
             style: {
@@ -323,6 +354,7 @@ const getChartOptions = () => {
 }
 
 if (document.getElementById("pie-chart") && typeof ApexCharts !== 'undefined') {
-    const chart = new ApexCharts(document.getElementById("pie-chart"), getChartOptions());
+    const pieChartEl = document.getElementById("pie-chart");
+    const chart = new ApexCharts(pieChartEl, getChartOptions(pieChartEl));
     chart.render();
 }
