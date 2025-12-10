@@ -264,56 +264,65 @@ const brandSecondaryColor = getBrandSecondaryColor();
 const brandTertiaryColor = getBrandTertiaryColor();
 const neutralPrimaryColor = getNeutralPrimaryColor();
 
-const initGenderPie = () => {
-    const el = document.getElementById("gender-pie-chart");
-    if (!el || typeof ApexCharts === "undefined") return;
-
-    const femei = Number(el.dataset.femei) || 0;
-    const barbati = Number(el.dataset.barbati) || 0;
-
-    const options = {
-        series: [femei, barbati],
-        labels: ["Femei", "Bărbați"],
-        colors: ["#e84a5f", "#2d5cf2"],
+const getChartOptions = () => {
+    return {
+        series: [52.8, 26.8, 20.4],
+        colors: [brandColor, brandSecondaryColor, brandTertiaryColor],
         chart: {
-            height: 360,
+            height: 420,
             width: "100%",
             type: "pie",
         },
         stroke: {
-            colors: ["#ffffff"],
-            width: 1
+            colors: [neutralPrimaryColor],
+            lineCap: "",
         },
         plotOptions: {
             pie: {
-                dataLabels: {
-                    offset: -15
+                labels: {
+                    show: true,
                 },
-                size: "90%",
+                size: "100%",
+                dataLabels: {
+                    offset: -25
+                }
             },
         },
+        labels: ["Direct", "Organic search", "Referrals"],
         dataLabels: {
             enabled: true,
-            formatter: (_, opts) => `${opts.w.config.series[opts.seriesIndex]}%`,
             style: {
                 fontFamily: "Inter, sans-serif",
-                fontWeight: 600
-            }
+            },
         },
         legend: {
-            show: false
+            position: "bottom",
+            fontFamily: "Inter, sans-serif",
         },
-        tooltip: {
-            y: {
-                formatter: (val) => `${val}%`
-            }
-        }
-    };
+        yaxis: {
+            labels: {
+                formatter: function (value) {
+                    return value + "%"
+                },
+            },
+        },
+        xaxis: {
+            labels: {
+                formatter: function (value) {
+                    return value + "%"
+                },
+            },
+            axisTicks: {
+                show: false,
+            },
+            axisBorder: {
+                show: false,
+            },
+        },
+    }
+}
 
-    const chart = new ApexCharts(el, options);
+if (document.getElementById("pie-chart") && typeof ApexCharts !== 'undefined') {
+    const chart = new ApexCharts(document.getElementById("pie-chart"), getChartOptions());
     chart.render();
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-    initGenderPie();
-});
+}
