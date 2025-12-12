@@ -23,14 +23,11 @@
 
 	<Target Name="EnsureNodeModules" BeforeTargets="Tailwind">
 		<Message Text="Verificare dependențe npm..." Importance="high" />
-		<Exec Command="npm install"
-			  Condition="!Exists('node_modules')"
-			  ContinueOnError="false" />
+		<Exec Command="npm install" Condition="!Exists('node_modules')" ContinueOnError="false" />
 	</Target>
 
 	<Target Name="Tailwind" BeforeTargets="Build" DependsOnTargets="EnsureNodeModules">
-		<Exec Command="npm run css:build"
-			  ContinueOnError="true" />
+		<Exec Command="npm run css:build" ContinueOnError="true" />
 	</Target>
 
 
