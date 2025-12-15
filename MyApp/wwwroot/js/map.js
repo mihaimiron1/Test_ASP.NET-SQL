@@ -133,6 +133,7 @@ am5.ready(function () {
     var searchInput = document.getElementById("search");
     var searchButton = document.getElementById("search-button");
     var searchMessage = document.getElementById("search-message");
+    var searchForm = document.getElementById("map-search-form");
 
     function handleSearch() {
         if (!searchInput) return;
@@ -185,6 +186,12 @@ am5.ready(function () {
     if (searchButton) {
         searchButton.addEventListener("click", handleSearch);
     }
+    if (searchForm) {
+        searchForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            handleSearch();
+        });
+    }
     if (searchInput) {
         searchInput.addEventListener("keyup", function (e) {
             if (e.key === "Enter") {
@@ -197,23 +204,38 @@ am5.ready(function () {
     // Functie pentru afisarea statisticilor raionului
     function showRegionStats(data) {
         // Ascunde mesajul initial
-        document.getElementById('initial-message').classList.add('hidden');
+        var initialMsg = document.getElementById('initial-message');
+        if (initialMsg) initialMsg.classList.add('hidden');
 
         // Afiseaza panoul cu statistici
         var statsPanel = document.getElementById('region-stats');
-        statsPanel.classList.remove('hidden');
+        if (statsPanel) statsPanel.classList.remove('hidden');
 
         // Actualizeaza numele raionului
-        document.getElementById('region-name').textContent = data.Raion;
+        var nameEl = document.getElementById('region-name');
+        if (nameEl) nameEl.textContent = data.Raion || "";
 
         // Actualizeaza prezența la vot
-        document.getElementById('region-turnout').textContent = data.ProcenteVot + '%';
+        var turnoutEl = document.getElementById('region-turnout');
+        if (turnoutEl) {
+            turnoutEl.textContent = (data.ProcenteVot || 0) + '%';
+        }
 
-        // Creare/actualizare grafic pie pentru gen
-        createPieChart(data);
+        var votersEl = document.getElementById('region-voters');
+        if (votersEl) {
+            votersEl.textContent = data.Votanti ? data.Votanti.toLocaleString("ro-RO") + " votanți" : "";
+        }
+
+        // Creare/actualizare grafic pie (daca exista containerul)
+        if (document.getElementById('region-pie-chart')) {
+            createPieChart(data);
+        }
+
+        // Afiseaza lista de candidati (daca exista)
+        renderCandidates(data);
     }
 
-    // Variabila pentru a stoca instanaa graficului
+    // Variabila pentru a stoca instanta graficului
     var pieChartInstance = null;
 
     // Functie pentru crearea graficului pie
@@ -221,6 +243,13 @@ am5.ready(function () {
         // Distruge graficul existent daca exista
         if (pieChartInstance) {
             pieChartInstance.destroy();
+        }
+
+        // Daca lipsesc datele de gen, nu afisam graficul
+        if (data.ProcenteFemei === undefined || data.ProcenteBarbati === undefined) {
+            var container = document.querySelector("#region-pie-chart");
+            if (container) container.innerHTML = "";
+            return;
         }
 
         var options = {
@@ -257,18 +286,60 @@ am5.ready(function () {
             responsive: [{
                 breakpoint: 480,
                 options: {
-                    chart: {
-                        height: 300
-                    },
-                    legend: {
-                        position: 'bottom'
-                    }
+                    chart: { height: 300 },
+                    legend: { position: 'bottom' }
                 }
             }]
         };
 
         pieChartInstance = new ApexCharts(document.querySelector("#region-pie-chart"), options);
         pieChartInstance.render();
+    }
+
+    function renderCandidates(data) {
+        var listEl = document.getElementById('candidate-list');
+        if (!listEl) return;
+
+        listEl.innerHTML = "";
+
+        if (!data.Candidates || !Array.isArray(data.Candidates) || data.Candidates.length === 0) {
+            listEl.innerHTML = '<p class="text-sm text-gray-500">Nu sunt date pentru candidați.</p>';
+            return;
+        }
+
+        data.Candidates.forEach(function (cand) {
+            var votes = (cand.ProcenteVot && data.Votanti)
+                ? Math.round((cand.ProcenteVot / 100) * data.Votanti)
+                : null;
+
+            var card = document.createElement('div');
+            card.className = "flex items-center gap-4 border border-gray-300 rounded-lg p-4 shadow-sm";
+
+            var logo = document.createElement('img');
+            logo.src = cand.PartidLogo || "/images/default.png";
+            logo.alt = cand.Partid || "Logo";
+            logo.className = "w-16 h-16 object-contain border border-gray-300 rounded";
+
+            var content = document.createElement('div');
+            content.className = "flex-1";
+
+            var title = document.createElement('p');
+            title.className = "text-base font-semibold text-gray-800";
+            var votesText = votes !== null ? " - " + votes.toLocaleString("ro-RO") + " votanți" : "";
+            title.textContent = (cand.Partid || "Partid") + " - " + (cand.ProcenteVot || 0) + "% " + votesText;
+
+            var sub = document.createElement('p');
+            sub.className = "text-sm text-gray-700";
+            sub.textContent = cand.Candidat || "";
+
+            content.appendChild(title);
+            content.appendChild(sub);
+
+            card.appendChild(logo);
+            card.appendChild(content);
+
+            listEl.appendChild(card);
+        });
     }
 
     // Setare date pentru serie

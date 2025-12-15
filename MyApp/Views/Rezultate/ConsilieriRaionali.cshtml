@@ -150,3 +150,68 @@
 </script>
 
 <!------------ Content  ------------>
+
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/geodata/moldovaHigh.js"></script>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 items-start">
+    <!-- Harta Moldovei -->
+    <div class="space-y-4">
+        <form id="map-search-form" class="max-w-md mx-auto">
+            <label for="search" class="block mb-2.5 text-sm font-medium text-heading sr-only ">Search</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                    <svg class="w-4 h-4 text-body" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
+                         height="24" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-width="2"
+                              d="m21 21-3.5-3.5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
+                    </svg>
+                </div>
+                <input type="search" id="search"
+                       class="block w-full p-3 ps-9 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
+                       placeholder="Search" required />
+                <button type="button" id="search-button"
+                        class="absolute end-1.5 bottom-1.5 text-white bg-brand hover:bg-brand-strong box-border border border-transparent focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded text-xs px-3 py-1.5 focus:outline-none">
+                    Search
+                </button>
+            </div>
+            <p id="search-message" class="text-sm text-red-600 text-center mt-2 hidden"></p>
+        </form>
+
+        <div id="chartdiv" style="width: 100%; height: 600px;"></div>
+    </div>
+
+
+
+    <!-- Statistici pentru raionul selectat -->
+    <div id="region-stats" class="p-6 hidden space-y-4">
+        <div>
+            <h4 id="region-name" class="text-2xl font-bold text-gray-800 mb-2"></h4>
+            <p class="text-gray-600">Prezență la vot:</p>
+            <p id="region-turnout" class="text-3xl font-bold text-blue-600"></p>
+            <p id="region-voters" class="text-sm text-gray-600"></p>
+        </div>
+
+        <div id="candidate-list" class="space-y-3">
+            <!-- Cardurile de candidati se insereaza din JS -->
+        </div>
+    </div>
+
+    <!-- Mesaj inițial -->
+    <div id="initial-message" class="p-6 flex items-center justify-center" style="min-height: 400px;">
+        <p class="text-gray-500 text-center text-lg">
+            Selectați un raion pe hartă pentru a vedea statisticile
+        </p>
+    </div>
+</div>
+
+
+
+<script>
+    // Date pentru hartă din controller
+    window.mapData = @Html.Raw(ViewBag.MapData);
+</script>
+
+<script src="/js/map.js"></script>
