@@ -36,9 +36,24 @@ am5.ready(function () {
 
     // Creare dictionar pentru raioanele cu date
     var regionDataMap = {};
+    var regionNameToId = {};
+    var regionNames = [];
+
+    function normalizeName(str) {
+        return (str || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") // elimina diacritice
+            .trim();
+    }
     if (window.mapData) {
         window.mapData.forEach(function (item) {
             regionDataMap[item.Id] = item;
+            if (item.Raion) {
+                var normalized = normalizeName(item.Raion);
+                regionNameToId[normalized] = item.Id;
+                regionNames.push({ name: item.Raion, normalized, id: item.Id });
+            }
         });
     }
 
@@ -83,6 +98,26 @@ am5.ready(function () {
     // Retine ultimul poligon selectat pentru a-l reseta la culoarea standard
     var selectedPolygon = null;
 
+    // Retine ultimul poligon selectat pentru a-l reseta la culoarea standard
+    var selectedPolygon = null;
+
+    function resetSelectedPolygon() {
+        if (selectedPolygon) {
+            selectedPolygon.set("active", false);
+            selectedPolygon.set("fill", COLOR_ACTIVE_DATA);
+        }
+    }
+
+    function selectRegion(dataItem, regionData) {
+        resetSelectedPolygon();
+        selectedPolygon = dataItem.get("mapPolygon");
+        if (selectedPolygon) {
+            selectedPolygon.set("active", true);
+            selectedPolygon.set("fill", COLOR_ACTIVE_CLICK);
+        }
+        showRegionStats(regionData);
+    }
+
     // Eveniment click pe poligon
     polygonSeries.mapPolygons.template.events.on("click", function (ev) {
         var dataItem = ev.target.dataItem;
@@ -90,17 +125,74 @@ am5.ready(function () {
         var regionData = regionDataMap[regionId];
 
         if (regionData) {
-            if (selectedPolygon && selectedPolygon !== ev.target) {
-                selectedPolygon.set("active", false);
-                selectedPolygon.set("fill", COLOR_ACTIVE_DATA); // Revine la albastru deschis
-            }
-
-            selectedPolygon = ev.target;
-            selectedPolygon.set("active", true);
-            selectedPolygon.set("fill", COLOR_ACTIVE_CLICK); // Evidentiaza raionul selectat
-            showRegionStats(regionData);
+            selectRegion(dataItem, regionData);
         }
     });
+
+    // Căutare raion după nume din controller
+    var searchInput = document.getElementById("search");
+    var searchButton = document.getElementById("search-button");
+    var searchMessage = document.getElementById("search-message");
+
+    function handleSearch() {
+        if (!searchInput) return;
+
+        var rawQuery = (searchInput.value || "").trim();
+        var query = normalizeName(rawQuery);
+        if (!query) {
+            if (searchMessage) {
+                searchMessage.textContent = "";
+                searchMessage.classList.add("hidden");
+            }
+            resetSelectedPolygon();
+            return;
+        }
+
+        var regionId = regionNameToId[query];
+
+        // Daca nu exista match exact, incearca autocomplete pe inceput de cuvant
+        if (!regionId) {
+            var suggestion = regionNames.find(function (r) {
+                return r.normalized.startsWith(query);
+            });
+            if (suggestion) {
+                regionId = suggestion.id;
+                searchInput.value = suggestion.name; // autocomplete vizual
+            }
+        }
+
+        if (!regionId) {
+            if (searchMessage) {
+                searchMessage.textContent = "Raionul nu participa in scrutin";
+                searchMessage.classList.remove("hidden");
+            }
+            resetSelectedPolygon();
+            return;
+        }
+
+        if (searchMessage) {
+            searchMessage.textContent = "";
+            searchMessage.classList.add("hidden");
+        }
+
+        var dataItem = polygonSeries.getDataItemById(regionId);
+        var regionData = regionDataMap[regionId];
+        if (dataItem && regionData) {
+            selectRegion(dataItem, regionData);
+        }
+    }
+
+    if (searchButton) {
+        searchButton.addEventListener("click", handleSearch);
+    }
+    if (searchInput) {
+        searchInput.addEventListener("keyup", function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                handleSearch();
+            }
+        });
+    }
 
     // Functie pentru afisarea statisticilor raionului
     function showRegionStats(data) {
