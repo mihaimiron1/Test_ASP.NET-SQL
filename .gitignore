@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 node_modules/
 wwwroot/css/output.css
+
+node_modules/
+package-lock.json

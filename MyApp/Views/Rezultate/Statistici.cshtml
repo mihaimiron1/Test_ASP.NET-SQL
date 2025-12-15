@@ -3,7 +3,6 @@
     var prezenta = ViewBag.Prezenta ?? 0;
 }
 
-
 <div class="flex items-center justify-between mb-4">
     <div>
         <h2 class="text-xl font-semibold text-gray-800">Prezența la vot</h2>
@@ -14,31 +13,22 @@
 <div id="donut-chart" class="py-4" data-presence="@prezenta"></div>
 <div id="chart-selection-label" class="text-sm text-gray-600 mt-2"></div>
 
-
-
-
 <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-6">
     Participare pe Grupe de Vârstă
 </h3>
-
 <div id="age-participation-chart" data-age-data='@Html.Raw(ViewBag.AgeData)'>
-    <!-- Barele se generează\a dinamic -->
+    <!-- Barele se generează dinamic -->
 </div>
 
+<!-- Secțiunea cu Hartă și Statistici pe Raion -->
+<h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-6 mt-12">
+    Statistici pe Raioane
+</h3>
 
 
 
 
-<style>
-    #chartdiv {
-        width: 100%;
-        height: 600px;
-    }
-</style>
 
- 
-
-<!-- Harta trebuie de schimbat -->
 
 <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
 <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
@@ -46,20 +36,32 @@
 <script src="https://cdn.amcharts.com/lib/5/geodata/moldovaHigh.js"></script>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 items-start">
-    <!-- Harta: pe desktop ocupă jumătate din lățime, pe mobil 100% -->
-    <div id="chartdiv"></div>
+    <!-- Harta Moldovei -->
+   
+        <div id="chartdiv" style="width: 100%; height: 600px;"></div>
 
-    <script src="/js/map.js"></script>
 
-
-    <div class="max-w-sm w-full bg-neutral-primary-soft p-4 md:p-6">
-        <!-- Line Chart -->
-        <div class="py-6" id="pie-chart" data-gender='@Html.Raw(ViewBag.GenderData)'></div>
+    <!-- Statistici pentru raionul selectat -->
+    <div id="region-stats" class="p-6 hidden">
+        <h4 id="region-name" class="text-2xl font-bold text-gray-800 mb-4"></h4>
+        <div class="mb-6">
+            <p class="text-gray-600 mb-2">Prezență la vot:</p>
+            <p id="region-turnout" class="text-3xl font-bold text-blue-600"></p>
+        </div>
+        <div id="region-pie-chart" style="height: 400px;"></div>
     </div>
 
+    <!-- Mesaj inițial -->
+    <div id="initial-message" class="p-6 flex items-center justify-center" style="min-height: 400px;">
+        <p class="text-gray-500 text-center text-lg">
+            Selectați un raion pe hartă pentru a vedea statisticile
+        </p>
+    </div>
 </div>
-<br>
-<br>
-<br>
-<br>
 
+<script>
+    // Date pentru hartă din controller
+    window.mapData = @Html.Raw(ViewBag.MapData);
+</script>
+
+        <script src="/js/map.js"></script>

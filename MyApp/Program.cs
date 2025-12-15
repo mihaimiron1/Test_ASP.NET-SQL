@@ -1,5 +1,7 @@
-using MyApp.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using MyApp.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -34,6 +36,18 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+
+app.UseStaticFiles(); 
+
+// Permite accesul la node_modules
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(app.Environment.ContentRootPath, "node_modules")),
+    RequestPath = "/node_modules"
+});
+
+
 app.UseRequestLocalization();
 
 app.UseHttpsRedirection();
@@ -47,6 +61,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Rezultate}/{action=PrimariMunicipali}/{id?}")
     .WithStaticAssets();
+
 
 
 app.Run();

@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/mihaimiron1/ElectioMonitor#readme",
   "dependencies": {
+    "@amcharts/amcharts5": "^5.14.4",
     "@tailwindcss/cli": "^4.1.17",
     "@tailwindcss/postcss": "^4.1.17",
     "apexcharts": "^3.46.0",
