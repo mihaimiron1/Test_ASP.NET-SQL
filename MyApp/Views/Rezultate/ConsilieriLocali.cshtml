@@ -159,3 +159,102 @@
 </script>
 
 <!------------ Content  ------------>
+<div class="grid grid-cols-1 gap-6 mt-6 items-start">
+ 
+    <div class="space-y-4">
+        <form class="max-w-md mx-auto">
+            <label for="search" class="block mb-2.5 text-sm font-medium text-heading sr-only ">Search</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                    <svg class="w-4 h-4 text-body" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="m21 21-3.5-3.5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" /></svg>
+                </div>
+                <input type="search" id="search" class="block w-full p-3 ps-9 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body" placeholder="Search" required />
+                <button type="button" class="absolute end-1.5 bottom-1.5 text-white bg-brand hover:bg-brand-strong box-border border border-transparent focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded text-xs px-3 py-1.5 focus:outline-none">Search</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+
+
+<div class="w-72 relative">
+    <!-- Label -->
+    <label class="block text-sm font-medium text-gray-600 mb-2">
+        Selectează categoria
+    </label>
+
+    <!-- Button -->
+    <button id="selectBtn"
+            class="w-full flex items-center justify-between
+           bg-white border border-gray-200
+           rounded-xl px-4 py-3
+           text-gray-800 font-medium
+           shadow-sm hover:border-blue-400
+           focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <span id="selectedValue">Consilieri Locali</span>
+
+        <!-- Chevron -->
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+
+    <!-- Dropdown -->
+    <ul id="dropdown"
+        class="absolute z-20 mt-2 w-full bg-white
+           border border-gray-200 rounded-xl
+           shadow-lg overflow-hidden hidden">
+        <li class="px-4 py-3 cursor-pointer hover:bg-blue-50">
+            Primari Municipali
+        </li>
+        <li class="px-4 py-3 cursor-pointer hover:bg-blue-50">
+            Primari Locali
+        </li>
+        <li class="px-4 py-3 cursor-pointer hover:bg-blue-50">
+            Consilieri Municipali
+        </li>
+        <li class="px-4 py-3 cursor-pointer hover:bg-blue-50">
+            Consilieri Raionali
+        </li>
+        <li class="px-4 py-3 cursor-pointer bg-blue-600 text-white font-semibold">
+            Consilieri Locali
+        </li>
+    </ul>
+</div>
+
+
+<script>
+    const btn = document.getElementById("selectBtn");
+    const dropdown = document.getElementById("dropdown");
+    const selectedValue = document.getElementById("selectedValue");
+
+    btn.addEventListener("click", () => {
+      dropdown.classList.toggle("hidden");
+    });
+
+    dropdown.querySelectorAll("li").forEach(item => {
+      item.addEventListener("click", () => {
+        selectedValue.textContent = item.textContent;
+        dropdown.classList.add("hidden");
+
+        // reset styles
+        dropdown.querySelectorAll("li").forEach(li => {
+          li.classList.remove("bg-blue-600", "text-white", "font-semibold");
+          li.classList.add("hover:bg-blue-50");
+        });
+
+        // active item
+        item.classList.add("bg-blue-600", "text-white", "font-semibold");
+        item.classList.remove("hover:bg-blue-50");
+      });
+    });
+
+    // click outside
+    document.addEventListener("click", (e) => {
+      if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.add("hidden");
+      }
+    });
+</script>

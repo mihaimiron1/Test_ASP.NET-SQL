@@ -358,3 +358,6 @@ if (document.getElementById("pie-chart") && typeof ApexCharts !== 'undefined') {
     const chart = new ApexCharts(pieChartEl, getChartOptions(pieChartEl));
     chart.render();
 }
+
+
+
