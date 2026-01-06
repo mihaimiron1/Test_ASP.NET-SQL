@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using MyApp.Data;
+using MyApp.Repositories;
+using MyApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews()
     .AddViewLocalization();
+
 
 
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
@@ -20,11 +22,15 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
            .AddSupportedUICultures(supportedCultures);
 });
 
+// �nregistrare Connection Factory
+builder.Services.AddSingleton<IDbConnectionFactory>(sp =>
+    new DbConnectionFactory(builder.Configuration.GetConnectionString("DefaultConnection")!));
+
+// �nregistrare Repositories
+builder.Services.AddScoped<IAssignedVoterRepository, AssignedVoterRepository>();
 
 
-// for database connection
-builder.Services.AddDbContext<UniversitateaContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
+
 
 var app = builder.Build();
 

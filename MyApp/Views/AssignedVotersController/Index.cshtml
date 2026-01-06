@@ -1,0 +1,61 @@
+﻿@model IEnumerable<MyApp.Models.AssignedVoterStatistics>
+
+@{
+    ViewData["Title"] = "Voter Statistics - Simple Test";
+}
+
+<h2>Assigned Voters Statistics</h2>
+
+<p>
+    <strong>Total Records:</strong> @Model.Count()
+</p>
+
+<hr />
+
+@if (!Model.Any())
+{
+    <p>No voter statistics found.</p>
+}
+else
+{
+    <table border="1" cellpadding="10" cellspacing="0" style="width:100%; border-collapse: collapse;">
+        <thead style="background-color: #f0f0f0;">
+            <tr>
+                <th>Voter ID</th>
+                <th>Status</th>
+                <th>Gender</th>
+                <th>Age Category</th>
+                <th>Polling Station</th>
+                <th>Region</th>
+                <th>Parent Region</th>
+                <th>Creation Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var voter in Model)
+            {
+                <tr>
+                    <td>@voter.AssignedVoterId</td>
+                    <td>@voter.AssignedVoterStatus</td>
+                    <td>@voter.Gender</td>
+                    <td>@voter.AgeCategoryId</td>
+                    <td>@voter.PollingStationId</td>
+                    <td>@voter.RegionId</td>
+                    <td>@voter.ParentRegionId</td>
+                    <td>@voter.CreationDate.ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<hr />
+
+<h3>Test Links</h3>
+<ul>
+    <li><a asp-action="Index">View All Voters</a></li>
+    <li><a asp-action="ByRegion" asp-route-regionId="1">View Region 1</a></li>
+    <li><a asp-action="ByRegion" asp-route-regionId="2">View Region 2</a></li>
+    <li><a asp-action="ByParentRegion" asp-route-regionId="1">View Parent Region 1</a></li>
+    <li><a asp-action="ByParentRegion" asp-route-regionId="2">View Parent Region 2</a></li>
+</ul>
