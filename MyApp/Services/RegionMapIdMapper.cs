@@ -55,7 +55,7 @@ namespace MyApp.Services
             { 33, "MD-SV" },  // Ștefan Vodă
             { 34, "MD-TA" },  // Taraclia
             { 35, "MD-TE" },  // Telenești
-            //{ 14721, "MD-SN" },  // Unitatea Teritorială din Stînga Nistrului 
+            { 14721, "MD-SN" },  // Unitatea Teritorială din Stînga Nistrului 
             { 36, "MD-UN" },  // Ungheni
         };
 
