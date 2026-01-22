@@ -3,26 +3,29 @@ using Microsoft.Data.SqlClient;
 using MyApp.Models;
 using System.Data;
 
-public class DbService
+namespace MyApp.Data
 {
-    private readonly IConfiguration _config;
-
-    public DbService(IConfiguration config)
+    public class DbService
     {
-        _config = config;
-    }
+        private readonly IConfiguration _config;
 
-    private IDbConnection Connection =>
-        new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+        public DbService(IConfiguration config)
+        {
+            _config = config;
+        }
 
-    // EX: procedură care returnează tabel
-    public async Task<List<AssignedVoterStatistics>> GetVoterStatistics()
-    {
-        using var db = Connection;
-        var result = await db.QueryAsync<AssignedVoterStatistics>(
-            "GetVoterStatistics",
-            commandType: CommandType.StoredProcedure);
+        private IDbConnection Connection =>
+            new SqlConnection(_config.GetConnectionString("DefaultConnection"));
 
-        return result.ToList();
+        // EX: procedură care returnează tabel
+        public async Task<List<RegionStatistic>> GetVoterStatistics()
+        {
+            using var db = Connection;
+            var result = await db.QueryAsync<RegionStatistic>(
+                "GetVoterStatistics",
+                commandType: CommandType.StoredProcedure);
+
+            return result.ToList();
+        }
     }
 }

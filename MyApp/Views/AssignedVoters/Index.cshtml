@@ -1,4 +1,4 @@
-﻿@model IEnumerable<MyApp.Models.AssignedVoterStatistics>
+﻿@model IEnumerable<MyApp.Models.RegionStatistic>
 
 @{
     ViewData["Title"] = "Voter Statistics - Simple Test";
@@ -58,4 +58,5 @@ else
     <li><a asp-action="ByRegion" asp-route-regionId="2">View Region 2</a></li>
     <li><a asp-action="ByParentRegion" asp-route-regionId="1">View Parent Region 1</a></li>
     <li><a asp-action="ByParentRegion" asp-route-regionId="2">View Parent Region 2</a></li>
+    <li><a asp-action="FromStoredProcedure">View via Stored Procedure</a></li>
 </ul>

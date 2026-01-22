@@ -1,6 +1,6 @@
 ﻿namespace MyApp.Models
 {
-    public class AssignedVoterStatistics
+    public class RegionStatistic
     {
         public int AssignedVoterId { get; set; }
         public int AssignedVoterStatus { get; set; }

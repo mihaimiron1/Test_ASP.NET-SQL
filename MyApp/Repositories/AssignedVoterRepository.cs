@@ -1,7 +1,8 @@
 ﻿using Dapper;
 using MyApp.Models;
 using MyApp.Services;
-using System.Data;
+using System.Data;            
+
 
 namespace MyApp.Repositories
 {
@@ -14,11 +15,11 @@ namespace MyApp.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<IEnumerable<AssignedVoterStatistics>> GetAllAsync()
+        public async Task<IEnumerable<RegionStatistic>> GetAllAsync()
         {
             using var connection = _connectionFactory.CreateConnection();
 
-            var sql = @"SELECT 
+            var sql = @"SELECT TOP (100) 
                             AssignedVoterId,
                             AssignedVoterStatus,
                             Gender,
@@ -29,17 +30,17 @@ namespace MyApp.Repositories
                             CreationDate
                         FROM AssignedVoterStatistics";
 
-            return await connection.QueryAsync<AssignedVoterStatistics>(sql);
+            return await connection.QueryAsync<RegionStatistic>(sql);
         }
 
         
 
-        public async Task<IEnumerable<AssignedVoterStatistics>> GetByRegionAsync(int regionId)
+        public async Task<IEnumerable<RegionStatistic>> GetByRegionAsync(int regionId)
         {
             using var connection = _connectionFactory.CreateConnection();
 
-            var sql = @"SELECT 
-                            AssignedVoterId,
+            var sql = @"SELECT TOP (100) 
+                            AssignedVoterId,v 
                             AssignedVoterStatus,
                             Gender,
                             AgeCategoryId,
@@ -50,14 +51,14 @@ namespace MyApp.Repositories
                         FROM AssignedVoterStatistics
                         WHERE RegionId = @RegionId";
 
-            return await connection.QueryAsync<AssignedVoterStatistics>(sql, new { RegionId = regionId });
+            return await connection.QueryAsync<RegionStatistic>(sql, new { RegionId = regionId });
         }
 
-        public async Task<IEnumerable<AssignedVoterStatistics>> GetByParentRegionAsync(int regionId)
+        public async Task<IEnumerable<RegionStatistic>> GetByParentRegionAsync(int regionId)
         {
             using var connection = _connectionFactory.CreateConnection();
 
-            var sql = @"SELECT 
+            var sql = @"SELECT TOP (100) 
                             AssignedVoterId,
                             AssignedVoterStatus,
                             Gender,
@@ -69,7 +70,7 @@ namespace MyApp.Repositories
                         FROM AssignedVoterStatistics
                         WHERE ParentRegionId = @ParentRegionId";
 
-            return await connection.QueryAsync<AssignedVoterStatistics>(sql, new { ParentRegionId = regionId });
+            return await connection.QueryAsync<RegionStatistic>(sql, new { ParentRegionId = regionId });
         }
     }
 }

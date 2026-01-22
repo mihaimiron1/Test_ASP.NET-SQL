@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using MyApp.Data;
 using MyApp.Repositories;
 using MyApp.Services;
 
@@ -11,7 +12,7 @@ builder.Services.AddControllersWithViews()
     .AddViewLocalization();
 
 
-
+  
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
 builder.Services.Configure<RequestLocalizationOptions>(options =>
@@ -22,12 +23,26 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
            .AddSupportedUICultures(supportedCultures);
 });
 
-// �nregistrare Connection Factory
+// Inregistrare Connection Factory
 builder.Services.AddSingleton<IDbConnectionFactory>(sp =>
     new DbConnectionFactory(builder.Configuration.GetConnectionString("DefaultConnection")!));
 
-// �nregistrare Repositories
+// Inregistrare Repositories
 builder.Services.AddScoped<IAssignedVoterRepository, AssignedVoterRepository>();
+// Inregistrare DbService pentru proceduri stocate
+builder.Services.AddScoped<DbService>();
+builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
+// Memory Cache
+builder.Services.AddMemoryCache();
+
+// Background Service pentru actualizare automată
+builder.Services.AddHostedService<StatisticsCacheService>();
+
+// Don't stop the web host if a BackgroundService throws (we log and retry instead)
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+});
 
 
 
@@ -62,6 +77,13 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
+// Ruta dedicată pentru AssignedVoters pentru a evita orice conflict
+app.MapControllerRoute(
+    name: "assignedvoters",
+    pattern: "AssignedVoters/{action=Index}/{id?}",
+    defaults: new { controller = "AssignedVoters" })
+    .WithStaticAssets();
 
 app.MapControllerRoute(
     name: "default",

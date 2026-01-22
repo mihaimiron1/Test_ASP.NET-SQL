@@ -4,8 +4,8 @@ namespace MyApp.Repositories
 {
     public interface IAssignedVoterRepository
     {
-        Task<IEnumerable<AssignedVoterStatistics>> GetAllAsync();
-        Task<IEnumerable<AssignedVoterStatistics>> GetByRegionAsync(int regionId);
-        Task<IEnumerable<AssignedVoterStatistics>> GetByParentRegionAsync(int regionId);
+        Task<IEnumerable<RegionStatistic>> GetAllAsync();
+        Task<IEnumerable<RegionStatistic>> GetByRegionAsync(int regionId);
+        Task<IEnumerable<RegionStatistic>> GetByParentRegionAsync(int regionId);
     }
-}
+}   
