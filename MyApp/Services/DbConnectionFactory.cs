@@ -9,7 +9,14 @@ namespace MyApp.Services
 
         public DbConnectionFactory(string connectionString)
         {
-            _connectionString = connectionString;
+            // Adaugă timeout mai mare dacă nu există deja
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            if (builder.ConnectTimeout < 60)
+            {
+                builder.ConnectTimeout = 60; // 60 secunde pentru conexiune
+            }
+            builder.CommandTimeout = 120; // 120 secunde pentru comenzi
+            _connectionString = builder.ConnectionString;
         }
 
         public IDbConnection CreateConnection()

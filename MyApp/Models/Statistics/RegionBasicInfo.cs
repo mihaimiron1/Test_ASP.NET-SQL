@@ -12,7 +12,11 @@
             3 => "UTA",
             4 => "Municipiu",
             5 => "Localitate",
-            _ => "Regiune"
+            6 => "Oraș",
+            7 => "Comună",
+            8 => "Sat (reședință)",
+            9 => "Sat",
+            _ => ""
         };
     }
 }

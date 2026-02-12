@@ -1,14 +1,12 @@
-﻿
-am5.ready(function () {
+﻿am5.ready(function () {
     // Creare root
     var root = am5.Root.new("chartdiv");
 
-
     // Culorile definite
-    const COLOR_ACTIVE_DATA = am5.color(0x60a5fa); // Albastru deschis (culoarea inițială a raioanelor cu date)
-    const COLOR_HOVER = am5.color(0x93c5fd);       // Albastru foarte deschis (hover)
+    const COLOR_ACTIVE_DATA = am5.color(0x60a5fa);
+    const COLOR_HOVER = am5.color(0x93c5fd);
     const COLOR_INACTIVE = am5.color(0xe5e7eb);
-    const COLOR_ACTIVE_CLICK = am5.color(0x2a5db0); // Albastru inchis la click
+    const COLOR_ACTIVE_CLICK = am5.color(0x2a5db0);
 
     // Setare tema
     root.setThemes([
@@ -31,7 +29,7 @@ am5.ready(function () {
     var polygonSeries = chart.series.push(
         am5map.MapPolygonSeries.new(root, {
             geoJSON: am5geodata_moldovaHigh,
-          })
+        })
     );
 
     // Creare dictionar pentru raioanele cu date
@@ -43,9 +41,10 @@ am5.ready(function () {
         return (str || "")
             .toLowerCase()
             .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") // elimina diacritice
+            .replace(/[\u0300-\u036f]/g, "")
             .trim();
     }
+
     if (window.mapData) {
         window.mapData.forEach(function (item) {
             regionDataMap[item.Id] = item;
@@ -66,13 +65,13 @@ am5.ready(function () {
         stroke: am5.color(0xffffff)
     });
 
-    // Configurare states pentru hover si seletie
+    // Configurare states pentru hover si selectie
     polygonSeries.mapPolygons.template.states.create("hover", {
-        fill: COLOR_HOVER // Albastru deschis pentru hover
+        fill: COLOR_HOVER
     });
 
     polygonSeries.mapPolygons.template.states.create("active", {
-        fill: COLOR_ACTIVE_CLICK // Albastru pentru selectie
+        fill: COLOR_ACTIVE_CLICK
     });
 
     // Eveniment pentru fiecare poligon
@@ -81,24 +80,18 @@ am5.ready(function () {
         var regionId = dataItem.get("id");
 
         if (regionDataMap[regionId]) {
-            // Acest raion are date - il facem activ
             var polygon = ev.target;
-            polygon.set("fill", COLOR_ACTIVE_DATA); // Albastru pentru raioane cu date
+            polygon.set("fill", COLOR_ACTIVE_DATA);
             polygon.set("interactive", true);
             polygon.set("tooltipText", regionDataMap[regionId].Raion);
         } else {
-            // Acest raion nu are date - il dezactivam
             var polygon = ev.target;
-            polygon.set("fill", COLOR_INACTIVE); // Gri pentru raioane fara date
+            polygon.set("fill", COLOR_INACTIVE);
             polygon.set("interactive", false);
             polygon.set("tooltipText", "");
         }
     });
 
-    // Retine ultimul poligon selectat pentru a-l reseta la culoarea standard
-    var selectedPolygon = null;
-
-    // Retine ultimul poligon selectat pentru a-l reseta la culoarea standard
     var selectedPolygon = null;
 
     function resetSelectedPolygon() {
@@ -151,14 +144,13 @@ am5.ready(function () {
 
         var regionId = regionNameToId[query];
 
-        // Daca nu exista match exact, incearca autocomplete pe inceput de cuvant
         if (!regionId) {
             var suggestion = regionNames.find(function (r) {
                 return r.normalized.startsWith(query);
             });
             if (suggestion) {
                 regionId = suggestion.id;
-                searchInput.value = suggestion.name; // autocomplete vizual
+                searchInput.value = suggestion.name;
             }
         }
 
@@ -221,14 +213,26 @@ am5.ready(function () {
             turnoutEl.textContent = (data.ProcenteVot || 0) + '%';
         }
 
+        // Afiseaza numarul de votanti si total alegatori
         var votersEl = document.getElementById('region-voters');
         if (votersEl) {
-            votersEl.textContent = data.Votanti ? data.Votanti.toLocaleString("ro-RO") + " votanți" : "";
+            var votanti = data.Votanti || 0;
+            var totalAlegatori = data.TotalAlegatori || data.Alegatori || 0;
+            if (totalAlegatori > 0) {
+                votersEl.innerHTML = '<span class="font-medium text-gray-700">' + votanti.toLocaleString("ro-RO") + '</span> voturi din <span class="font-medium text-gray-700">' + totalAlegatori.toLocaleString("ro-RO") + '</span> alegători';
+            } else {
+                votersEl.textContent = votanti ? votanti.toLocaleString("ro-RO") + " votanți" : "";
+            }
         }
 
         // Creare/actualizare grafic pie (daca exista containerul)
         if (document.getElementById('region-pie-chart')) {
             createPieChart(data);
+        }
+
+        // Afiseaza statisticile pe categorii de varsta
+        if (document.getElementById('region-age-stats')) {
+            renderAgeStats(data);
         }
 
         // Afiseaza lista de candidati (daca exista)
@@ -248,45 +252,57 @@ am5.ready(function () {
         // Daca lipsesc datele de gen, nu afisam graficul
         if (data.ProcenteFemei === undefined || data.ProcenteBarbati === undefined) {
             var container = document.querySelector("#region-pie-chart");
-            if (container) container.innerHTML = "";
+            if (container) container.innerHTML = "<p class='text-gray-500 text-center py-4'>Date indisponibile</p>";
             return;
         }
+
+        // Calculeaza numarul de votanti pe gen
+        var totalVotanti = data.Votanti || 0;
+        var numarFemei = data.NumarFemei || Math.round(totalVotanti * (data.ProcenteFemei / 100));
+        var numarBarbati = data.NumarBarbati || Math.round(totalVotanti * (data.ProcenteBarbati / 100));
 
         var options = {
             series: [data.ProcenteFemei, data.ProcenteBarbati],
             chart: {
                 type: 'pie',
-                height: 400
+                height: 280,
+                animations: { enabled: false }
             },
             labels: ['Femei', 'Bărbați'],
             colors: ['#f87171', '#3b82f6'],
             legend: {
                 position: 'bottom',
-                fontSize: '14px',
-                fontFamily: 'inherit'
+                fontSize: '13px',
+                fontFamily: 'inherit',
+                formatter: function (seriesName, opts) {
+                    var count = seriesName === 'Femei' ? numarFemei : numarBarbati;
+                    return seriesName + ': ' + count.toLocaleString('ro-RO');
+                }
             },
             dataLabels: {
                 enabled: true,
-                formatter: function (val) {
-                    return val.toFixed(1) + '%';
+                formatter: function (val, opts) {
+                    var count = opts.seriesIndex === 0 ? numarFemei : numarBarbati;
+                    return val.toFixed(1) + '%\n(' + count.toLocaleString('ro-RO') + ')';
                 },
                 style: {
-                    fontSize: '14px',
+                    fontSize: '11px',
                     fontWeight: 'bold',
                     colors: ['#fff']
                 }
             },
             tooltip: {
                 y: {
-                    formatter: function (val) {
-                        return val.toFixed(1) + '%';
+                    formatter: function (val, opts) {
+                        var count = opts.seriesIndex === 0 ? numarFemei : numarBarbati;
+                        return val.toFixed(1) + '% (' + count.toLocaleString('ro-RO') + ' votanți)';
                     }
                 }
             },
             responsive: [{
                 breakpoint: 480,
                 options: {
-                    chart: { height: 300 },
+                    chart: { height: 250 },
                     legend: { position: 'bottom' }
                 }
             }]
@@ -294,6 +310,53 @@ am5.ready(function () {
 
         pieChartInstance = new ApexCharts(document.querySelector("#region-pie-chart"), options);
         pieChartInstance.render();
+    }
+
+    // Functie pentru afisarea statisticilor pe categorii de varsta
+    function renderAgeStats(data) {
+        var container = document.getElementById('region-age-stats');
+        if (!container) return;
+
+        // Verifica daca exista date pentru categorii de varsta
+        var ageData = data.CategoriiVarsta || data.AgeCategories || data.ageStats || [];
+
+        if (!ageData || ageData.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">Date indisponibile pentru categorii de vârstă</p>';
+            return;
+        }
+
+        var html = ageData.map(function (item) {
+            // Suport pentru diferite formate de date
+            var name = item.Categorie || item.AgeCategoryName || item.Name || item.name || "";
+            var percentage = item.Procent || item.Percentage || item.percentage || 0;
+            var count = item.Numar || item.VoterCount || item.Count || item.count || 0;
+            var votedCount = item.NumarVotat || item.VotedCount || item.votedCount || 0;
+            var color = item.Color || item.color || "#3b82f6";
+
+            // Calculeaza procentul daca nu exista
+            if (percentage === 0 && count > 0 && votedCount > 0) {
+                percentage = (votedCount / count * 100);
+            }
+
+            return '<div class="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-50">' +
+                '<div class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ' + color + ';"></div>' +
+                '<div class="flex-1 min-w-0">' +
+                '<div class="flex items-center justify-between mb-1">' +
+                '<span class="text-sm font-medium text-gray-700 truncate">' + name + '</span>' +
+                '<span class="text-sm font-semibold ml-2" style="color: ' + color + ';">' + percentage.toFixed(1) + '%</span>' +
+                '</div>' +
+                '<div class="w-full bg-gray-200 rounded-full h-1.5">' +
+                '<div class="h-1.5 rounded-full" style="width: ' + Math.max(percentage, 2) + '%; background-color: ' + color + ';"></div>' +
+                '</div>' +
+                '<div class="text-xs text-gray-500 mt-1">' +
+                (votedCount > 0 ? votedCount.toLocaleString("ro-RO") + ' din ' : '') +
+                count.toLocaleString("ro-RO") + ' alegători' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+        }).join("");
+
+        container.innerHTML = html;
     }
 
     function renderCandidates(data) {

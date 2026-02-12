@@ -1,366 +1,119 @@
-﻿    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.Extensions.Caching.Memory;
-    using MyApp.Models.Statistics;
-    using MyApp.Repositories;
-    using MyApp.Services;
-    using System.Text.Json;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
+using MyApp.Repositories;
+using MyApp.Services;
+using System.Text.Json;
 
-    namespace MyApp.Controllers
+namespace MyApp.Controllers
+{
+    public class StatisticsController : Controller
     {
-        public class StatisticsController : Controller
+        private readonly IStatisticsRepository _statsRepository;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<StatisticsController> _logger;
+
+        private static readonly JsonSerializerOptions _jsonOptions = new()
         {
-            private readonly IMemoryCache _cache;
-            private readonly IStatisticsRepository _repository;
-            private readonly ILogger<StatisticsController> _logger;
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
 
-            public StatisticsController(
-                IMemoryCache cache,
-                IStatisticsRepository repository,
-                ILogger<StatisticsController> logger)
+        public StatisticsController(
+            IStatisticsRepository statsRepository,
+            IMemoryCache cache,
+            ILogger<StatisticsController> logger)
+        {
+            _statsRepository = statsRepository;
+            _cache = cache;
+            _logger = logger;
+        }
+
+        public async Task<IActionResult> HeatMap()
+        {
+            try
             {
-                _cache = cache;
-                _repository = repository;
-                _logger = logger;
-            }
-
-            // ============================================================
-            // 1. HEAT MAP - Main page with map
-            // ============================================================
-            public async Task<IActionResult> HeatMap()
-            {
-                _logger.LogInformation("HeatMap requested at {time}", DateTime.Now);
-
-                if (!_cache.TryGetValue("RegionStatistics", out IEnumerable<RegionVotingStatistic>? stats))
+                // Ia din cache sau din repository
+                var regionStats = _cache.Get<List<MyApp.Models.Statistics.RegionVotingStatistic>>("RegionStatistics");
+                
+                if (regionStats == null)
                 {
-                    _logger.LogWarning("Cache miss for RegionStatistics - fetching from database");
-                    stats = await _repository.GetAllRegionsStatisticsAsync();
-                    _cache.Set("RegionStatistics", stats, TimeSpan.FromSeconds(60));
-                }
-                else
-                {
-                    _logger.LogInformation("Cache hit for RegionStatistics");
+                    var stats = await _statsRepository.GetAllRegionsStatisticsAsync();
+                    regionStats = stats.ToList();
+                    
+                    // Cache pentru 10 minute
+                    _cache.Set("RegionStatistics", regionStats, TimeSpan.FromMinutes(10));
                 }
 
-                // Prepare map data - only regions with valid MapId will be colored
-                var mapData = (stats ?? Enumerable.Empty<RegionVotingStatistic>())
+                // Transformă în format pentru hartă
+                var mapData = regionStats
                     .Select(r =>
                     {
                         var mapId = RegionMapIdMapper.GetMapId(r.RegionId);
+                        if (mapId == null) return null;
+
                         return new
                         {
-                            MapId = mapId,
                             RegionId = r.RegionId,
                             RegionName = r.Name,
                             RegionNameRu = r.NameRu,
+                            MapId = mapId,
                             TotalVoters = r.TotalVoters,
                             LastUpdated = r.LastUpdated
                         };
                     })
-                    .Where(r => !string.IsNullOrEmpty(r.MapId))
+                    .Where(x => x != null)
                     .ToList();
 
-                _logger.LogInformation("HeatMap: Returning {count} regions with valid map IDs", mapData.Count);
+                ViewBag.MapData = JsonSerializer.Serialize(mapData, _jsonOptions);
+                ViewBag.AgeData = "[]"; // Nu mai trimitem date de vârstă globale
 
-                ViewBag.MapData = JsonSerializer.Serialize(mapData);
                 return View();
             }
-
-            // ============================================================
-            // 2. REGION DETAILS - Click on region in map
-            // ============================================================
-            public async Task<IActionResult> RegionDetails(int regionId)
+            catch (Exception ex)
             {
-                _logger.LogInformation("Region details requested for RegionId={regionId} at {time}", regionId, DateTime.Now);
+                _logger.LogError(ex, "Eroare la încărcarea HeatMap");
+                ViewBag.MapData = "[]";
+                ViewBag.AgeData = "[]";
+                ViewBag.Error = ex.Message;
+                return View();
+            }
+        }
 
+        [HttpGet]
+        public async Task<IActionResult> GetRegionStatisticsForHeatMap(int regionId)
+        {
+            try
+            {
+                // Încearcă din cache MAI ÎNTÂI
                 var cacheKey = $"RegionDetails_{regionId}";
+                var regionStats = _cache.Get<MyApp.Models.Statistics.DetailedRegionStatistic>(cacheKey);
 
-                if (!_cache.TryGetValue(cacheKey, out DetailedRegionStatistic? stats))
+                if (regionStats == null)
                 {
-                    _logger.LogWarning("Cache miss for {cacheKey} - fetching from database", cacheKey);
-
-                    try
+                    _logger.LogInformation("Cache miss pentru RegionId={RegionId}, se încarcă din DB...", regionId);
+                    regionStats = await _statsRepository.GetRegionDetailedStatisticsAsync(regionId);
+                    
+                    if (regionStats != null)
                     {
-                        stats = await _repository.GetRegionDetailedStatisticsAsync(regionId);
-
-                        if (stats == null)
-                        {
-                            _logger.LogWarning("Region {regionId} not found", regionId);
-                            return NotFound($"Regiunea cu ID {regionId} nu a fost găsită.");
-                        }
-
-                        _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(60));
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error fetching region details for {regionId}", regionId);
-                        return BadRequest($"Eroare la citirea detaliilor pentru regiunea {regionId}.");
+                        // Cache pentru 10 minute
+                        _cache.Set(cacheKey, regionStats, TimeSpan.FromMinutes(10));
                     }
                 }
                 else
                 {
-                    _logger.LogInformation("Cache hit for {cacheKey}", cacheKey);
+                    _logger.LogInformation("Cache HIT pentru RegionId={RegionId}", regionId);
                 }
 
-                // Get localities for this region
-                var localitiesCacheKey = $"Localities_{regionId}";
-                if (!_cache.TryGetValue(localitiesCacheKey, out IEnumerable<RegionBasicInfo>? localities))
+                if (regionStats == null)
                 {
-                    try
-                    {
-                        localities = await _repository.GetLocalitiesByRegionAsync(regionId);
-                        _cache.Set(localitiesCacheKey, localities, TimeSpan.FromSeconds(60));
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Error fetching localities for RegionId={regionId}", regionId);
-                        localities = Enumerable.Empty<RegionBasicInfo>();
-                    }
-                }
-
-                ViewBag.Localities = localities;
-                return View(stats);
-            }
-
-            // ============================================================
-            // 3. LOCALITY DETAILS - Selected from dropdown
-            // ============================================================
-            public async Task<IActionResult> LocalityDetails(int regionId)
-            {
-                _logger.LogInformation("Locality details requested for RegionId={regionId} at {time}", regionId, DateTime.Now);
-
-                var cacheKey = $"LocalityDetails_{regionId}";
-
-                if (!_cache.TryGetValue(cacheKey, out DetailedRegionStatistic? stats))
-                {
-                    _logger.LogWarning("Cache miss for {cacheKey} - fetching from database", cacheKey);
-
-                    try
-                    {
-                        stats = await _repository.GetLocalityDetailedStatisticsAsync(regionId);
-
-                        if (stats == null)
-                        {
-                            _logger.LogWarning("Locality {regionId} not found", regionId);
-                            return NotFound($"Localitatea cu ID {regionId} nu a fost găsită.");
-                        }
-
-                        _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(60));
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error fetching locality details for {regionId}", regionId);
-                        return BadRequest($"Eroare la citirea detaliilor pentru localitatea {regionId}.");
-                    }
-                }
-                else
-                {
-                    _logger.LogInformation("Cache hit for {cacheKey}", cacheKey);
-                }
-
-                return View("RegionDetails", stats);
-            }
-
-            // ============================================================
-            // 4. API - Get localities by region
-            // ============================================================
-            [HttpGet]
-            public async Task<IActionResult> GetLocalitiesByRegionJson(int regionId)
-            {
-                var cacheKey = $"Localities_{regionId}";
-
-                if (!_cache.TryGetValue(cacheKey, out IEnumerable<RegionBasicInfo>? localities))
-                {
-                    localities = await _repository.GetLocalitiesByRegionAsync(regionId);
-                    _cache.Set(cacheKey, localities, TimeSpan.FromSeconds(60));
+                    return Json(new { success = false, message = "Nu s-au găsit statistici pentru această regiune." });
                 }
 
                 return Json(new
                 {
                     success = true,
-                    regionId = regionId,
-                    localities = localities
-                });
-            }
-
-            // ============================================================
-            // 5. API JSON - AJAX refresh heat map
-            // ============================================================
-            [HttpGet]
-            public async Task<IActionResult> GetHeatMapJson()
-            {
-                if (!_cache.TryGetValue("RegionStatistics", out IEnumerable<RegionVotingStatistic>? stats))
-                {
-                    stats = await _repository.GetAllRegionsStatisticsAsync();
-                    _cache.Set("RegionStatistics", stats, TimeSpan.FromMinutes(5));
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    timestamp = DateTime.Now,
-                    regions = stats
-                });
-            }
-
-            // ============================================================
-            // 6. API JSON - Region details (AJAX)
-            // ============================================================
-            [HttpGet]
-            public async Task<IActionResult> GetRegionDetailsJson(int regionId)
-            {
-                var cacheKey = $"RegionDetails_{regionId}";
-
-                if (!_cache.TryGetValue(cacheKey, out DetailedRegionStatistic? stats))
-                {
-                    try
-                    {
-                        stats = await _repository.GetRegionDetailedStatisticsAsync(regionId);
-
-                        if (stats == null)
-                        {
-                            return Json(new { success = false, message = "Regiunea nu a fost găsită" });
-                        }
-
-                        _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(60));
-                    }
-                    catch
-                    {
-                        return Json(new { success = false, message = "Eroare la citirea datelor" });
-                    }
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    timestamp = DateTime.Now,
-                    data = stats
-                });
-            }
-
-            // ============================================================
-            // 7. API JSON - Locality details (AJAX)
-            // ============================================================
-            [HttpGet]
-            public async Task<IActionResult> GetLocalityDetailsJson(int regionId)
-            {
-                var cacheKey = $"LocalityDetails_{regionId}";
-
-                if (!_cache.TryGetValue(cacheKey, out DetailedRegionStatistic? stats))
-                {
-                    try
-                    {
-                        stats = await _repository.GetLocalityDetailedStatisticsAsync(regionId);
-
-                        if (stats == null)
-                        {
-                            return Json(new { success = false, message = "Localitatea nu a fost găsită" });
-                        }
-
-                        _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(60));
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error fetching locality details JSON for RegionId={regionId}", regionId);
-                        return Json(new { success = false, message = $"Eroare: {ex.Message}" });
-                    }
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    timestamp = DateTime.Now,
-                    data = stats
-                });
-            }
-
-            // ============================================================
-            // 8. INFO - Cache status
-            // ============================================================
-            public IActionResult CacheInfo()
-            {
-                var hasRegionStats = _cache.TryGetValue("RegionStatistics", out IEnumerable<RegionVotingStatistic>? regionStats);
-
-                var info = new
-                {
-                    RegionStatisticsCached = hasRegionStats,
-                    RegionCount = hasRegionStats ? regionStats!.Count() : 0,
-                    CurrentTime = DateTime.Now
-                };
-
-                return Json(info);
-            }
-
-            // ============================================================
-            // 9. DEBUG - Verify map data and mappings
-            // ============================================================
-            [HttpGet]
-            public async Task<IActionResult> DebugMapData()
-            {
-                var stats = await _repository.GetAllRegionsStatisticsAsync();
-
-                var mapData = stats.Select(r => new
-                {
-                    DatabaseRegionId = r.RegionId,
-                    DatabaseRegionName = r.Name,
-                    DatabaseRegionNameRu = r.NameRu,
-                    MapId = RegionMapIdMapper.GetMapId(r.RegionId),
-                    TotalVoters = r.TotalVoters,
-                    HasMapId = RegionMapIdMapper.HasMapping(r.RegionId),
-                    MappingStatus = RegionMapIdMapper.HasMapping(r.RegionId)
-                        ? "✅ Will be colored on map"
-                        : "❌ NO MAPPING - Will be white"
-                }).ToList();
-
-                return Json(new
-                {
-                    Message = "Regions from database with mapping status",
-                    TotalRegionsFromDatabase = mapData.Count,
-                    RegionsWithMapId = mapData.Count(m => m.HasMapId),
-                    RegionsWithoutMapId = mapData.Count(m => !m.HasMapId),
-                    Note = "Regions without mapping will appear WHITE on the map",
-                    Details = mapData
-                });
-            }
-
-            // ============================================================
-            // 10. API JSON - Region statistics for heat map click
-            // ============================================================
-            [HttpGet]
-            public async Task<IActionResult> GetRegionStatisticsForHeatMap(int regionId)
-            {
-                _logger.LogInformation("Heat map region statistics requested for RegionId={regionId}", regionId);
-
-                var cacheKey = $"HeatMapRegionStats_{regionId}";
-
-                if (!_cache.TryGetValue(cacheKey, out DetailedRegionStatistic? stats))
-                {
-                    try
-                    {
-                        stats = await _repository.GetRegionDetailedStatisticsAsync(regionId);
-
-                        if (stats == null)
-                        {
-                            return Json(new { success = false, message = "Regiunea nu a fost găsită" });
-                        }
-
-                        _cache.Set(cacheKey, stats, TimeSpan.FromSeconds(60));
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error fetching heat map region statistics for RegionId={regionId}", regionId);
-                        return Json(new { success = false, message = $"Eroare: {ex.Message}" });
-                    }
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    regionId = stats.RegionId,
-                    regionName = stats.RegionName,
-                    totalVoters = stats.TotalVoters,
-                    votedCount = stats.VotedCount,
-                    votingPercentage = stats.VotingPercentage,
-                    genderStats = stats.GenderStats.Select(g => new
+                    regionId = regionStats.RegionId,
+                    regionName = regionStats.RegionName,
+                    genderStats = regionStats.GenderStats.Select(g => new
                     {
                         gender = g.Gender,
                         voterCount = g.VoterCount,
@@ -368,43 +121,161 @@
                         percentage = g.Percentage,
                         color = g.Color
                     }),
-                    ageStats = stats.AgeStats.Select(a => new
+                    ageStats = regionStats.AgeStats.Select(a => new
                     {
-                        ageCategoryId = a.AgeCategoryId,
                         ageCategoryName = a.AgeCategoryName,
                         voterCount = a.VoterCount,
                         percentage = a.Percentage,
                         color = a.Color
                     }),
-                    lastUpdated = stats.LastUpdated
+                    lastUpdated = regionStats.LastUpdated
                 });
             }
-
-            // ============================================================
-            // 11. DIAGNOSTICS - Heat Map Troubleshooting Page
-            // ============================================================
-            public async Task<IActionResult> Diagnostics()
+            catch (Exception ex)
             {
-                var stats = await _repository.GetAllRegionsStatisticsAsync();
-                var mapData = (stats ?? Enumerable.Empty<RegionVotingStatistic>())
-                    .Select(r =>
-                    {
-                        var mapId = RegionMapIdMapper.GetMapId(r.RegionId);
-                        return new
-                        {
-                            MapId = mapId,
-                            RegionId = r.RegionId,
-                            RegionName = r.Name,
-                            RegionNameRu = r.NameRu,
-                            TotalVoters = r.TotalVoters,
-                            LastUpdated = r.LastUpdated
-                        };
-                    })
-                    .Where(r => !string.IsNullOrEmpty(r.MapId))
-                    .ToList();
+                _logger.LogError(ex, "Eroare la GetRegionStatisticsForHeatMap pentru regionId={RegionId}", regionId);
+                return Json(new { success = false, message = "Eroare la încărcarea datelor: " + ex.Message });
+            }
+        }
 
-                ViewBag.MapData = JsonSerializer.Serialize(mapData);
-                return View();
+        [HttpGet]
+        public async Task<IActionResult> GetLocalityStatistics(int regionId)
+        {
+            try
+            {
+                var cacheKey = $"LocalityDetails_{regionId}";
+                var localityStats = _cache.Get<MyApp.Models.Statistics.DetailedRegionStatistic>(cacheKey);
+
+                if (localityStats == null)
+                {
+                    localityStats = await _statsRepository.GetLocalityDetailedStatisticsAsync(regionId);
+                    
+                    if (localityStats != null)
+                    {
+                        _cache.Set(cacheKey, localityStats, TimeSpan.FromMinutes(10));
+                    }
+                }
+
+                if (localityStats == null)
+                {
+                    return Json(new { success = false, message = "Nu s-au găsit statistici pentru această localitate." });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    regionId = localityStats.RegionId,
+                    regionName = localityStats.RegionName,
+                    genderStats = localityStats.GenderStats.Select(g => new
+                    {
+                        gender = g.Gender,
+                        voterCount = g.VoterCount,
+                        votedCount = g.VotedCount,
+                        percentage = g.Percentage,
+                        color = g.Color
+                    }),
+                    ageStats = localityStats.AgeStats.Select(a => new
+                    {
+                        ageCategoryName = a.AgeCategoryName,
+                        voterCount = a.VoterCount,
+                        percentage = a.Percentage,
+                        color = a.Color
+                    }),
+                    lastUpdated = localityStats.LastUpdated
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Eroare la GetLocalityStatistics pentru regionId={RegionId}", regionId);
+                return Json(new { success = false, message = "Eroare la încărcarea datelor: " + ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLocalitiesByRegion(int regionId)
+        {
+            try
+            {
+                _logger.LogInformation("GetLocalitiesByRegion called for RegionId={RegionId}", regionId);
+                
+                var cacheKey = $"Localities_{regionId}";
+                var localities = _cache.Get<List<MyApp.Models.Statistics.RegionBasicInfo>>(cacheKey);
+
+                if (localities == null)
+                {
+                    _logger.LogInformation("Cache miss for Localities_{RegionId}, loading from DB...", regionId);
+                    var results = await _statsRepository.GetLocalitiesByRegionAsync(regionId);
+                    localities = results.ToList();
+                    _logger.LogInformation("Loaded {Count} localities for RegionId={RegionId}", localities.Count, regionId);
+                    _cache.Set(cacheKey, localities, TimeSpan.FromMinutes(10));
+                }
+                else
+                {
+                    _logger.LogInformation("Cache HIT for Localities_{RegionId}, {Count} localities", regionId, localities.Count);
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    localities = localities.Select(l => new
+                    {
+                        regionId = l.RegionId,
+                        name = l.Name,
+                        regionTypeId = l.RegionTypeId,
+                        regionTypeName = l.RegionTypeName
+                    })
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Eroare la GetLocalitiesByRegion pentru regionId={RegionId}", regionId);
+                return Json(new { success = false, message = "Eroare la încărcarea localităților: " + ex.Message });
+            }
+        }
+
+        // Endpoint pentru debug
+        [HttpGet]
+        public IActionResult CacheInfo()
+        {
+            var regionStats = _cache.Get<List<MyApp.Models.Statistics.RegionVotingStatistic>>("RegionStatistics");
+            
+            return Json(new
+            {
+                hasCachedData = regionStats != null,
+                regionCount = regionStats?.Count ?? 0,
+                regions = regionStats?.Select(r => new { r.RegionId, r.Name, r.TotalVoters })
+            });
+        }
+
+        // Endpoint pentru testarea localităților
+        [HttpGet]
+        public async Task<IActionResult> TestLocalities(int regionId = 2)
+        {
+            try
+            {
+                _logger.LogInformation("TestLocalities called for RegionId={RegionId}", regionId);
+                var results = await _statsRepository.GetLocalitiesByRegionAsync(regionId);
+                var localities = results.ToList();
+                
+                return Json(new
+                {
+                    success = true,
+                    regionId = regionId,
+                    count = localities.Count,
+                    localities = localities.Select(l => new
+                    {
+                        regionId = l.RegionId,
+                        name = l.Name,
+                        regionTypeId = l.RegionTypeId,
+                        regionTypeName = l.RegionTypeName
+                    })
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in TestLocalities for RegionId={RegionId}", regionId);
+                return Json(new { success = false, error = ex.Message, stackTrace = ex.StackTrace });
             }
         }
     }
+}

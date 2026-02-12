@@ -9,6 +9,7 @@ namespace MyApp.Repositories
     {
         private readonly IDbConnectionFactory _connectionFactory;
         private readonly ILogger<StatisticsRepository> _logger;
+        private const int CommandTimeout = 120;
 
         public StatisticsRepository(
             IDbConnectionFactory connectionFactory,
@@ -19,16 +20,24 @@ namespace MyApp.Repositories
         }
 
         // ============================================================
-        // 1. Heat Map - Toate regiunile cu prezență la vot
+        // 1. Heat Map - Lista raioane
+        // Apelează: sp_GetRaionVotingStatsForHeatMap (fără parametri)
+        // Returnează: RegionId, Name, NameRu, TotalVoters, LastUpdated
         // ============================================================
         public async Task<IEnumerable<RegionVotingStatistic>> GetAllRegionsStatisticsAsync()
         {
             try
             {
-                using var connection = _connectionFactory.CreateConnection();
-                return await connection.QueryAsync<RegionVotingStatistic>(
+                _logger.LogInformation("Calling sp_GetRaionVotingStatsForHeatMap...");
+                await using var connection = (System.Data.Common.DbConnection)_connectionFactory.CreateConnection();
+                
+                var result = await connection.QueryAsync<RegionVotingStatistic>(
                     "sp_GetRaionVotingStatsForHeatMap",
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: CommandTimeout);
+                
+                _logger.LogInformation("sp_GetRaionVotingStatsForHeatMap returned {Count} rows", result.Count());
+                return result;
             }
             catch (Exception ex)
             {
@@ -38,13 +47,15 @@ namespace MyApp.Repositories
         }
 
         // ============================================================
-        // 2. Statistici detaliate pentru RAION (RegionTypeId IN 2,3,4)
+        // 2. Statistici detaliate pentru RAION
+        // Apelează: sp_GetRaionGender + sp_GetRaionAgeCategory
         // ============================================================
         public async Task<DetailedRegionStatistic> GetRegionDetailedStatisticsAsync(int regionId)
         {
             try
             {
-                using var connection = _connectionFactory.CreateConnection();
+                _logger.LogInformation("Getting detailed statistics for RegionId={RegionId}", regionId);
+                await using var connection = (System.Data.Common.DbConnection)_connectionFactory.CreateConnection();
 
                 var result = new DetailedRegionStatistic
                 {
@@ -52,34 +63,14 @@ namespace MyApp.Repositories
                     LastUpdated = DateTime.Now
                 };
 
-                // Get region name and basic stats
-                var regionInfoSql = @"
-                    SELECT 
-                        r.RegionId,
-                        r.Name AS RegionName,
-                        COUNT(*) AS TotalVoters,
-                        SUM(CASE WHEN avs.AssignedVoterStatus >= 5000 THEN 1 ELSE 0 END) AS VotedCount
-                    FROM AssignedVoterStatistics avs
-                    INNER JOIN dbo.Region r ON avs.RegionId = r.RegionId
-                    WHERE r.RegionId = @RegionId
-                    GROUP BY r.RegionId, r.Name";
-
-                var regionInfo = await connection.QueryFirstOrDefaultAsync<dynamic>(
-                    regionInfoSql,
-                    new { RegionId = regionId });
-
-                if (regionInfo != null)
-                {
-                    result.RegionName = regionInfo.RegionName;
-                    result.TotalVoters = regionInfo.TotalVoters;
-                    result.VotedCount = regionInfo.VotedCount;
-                }
-
-                // Get gender statistics using stored procedure
+                // Apelează sp_GetRaionGender
+                // Returnează: Gender (1/2), VoterCount, VotedCount
+                _logger.LogInformation("Calling sp_GetRaionGender for RegionId={RegionId}", regionId);
                 var genderStatsRaw = await connection.QueryAsync<dynamic>(
                     "sp_GetRaionGender",
                     new { RegionId = regionId },
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: CommandTimeout);
 
                 var genderStats = genderStatsRaw.Select(g => new GenderStatistic
                 {
@@ -89,12 +80,11 @@ namespace MyApp.Repositories
                         2 => "Femei",
                         _ => "Necunoscut"
                     },
-                    VoterCount = (int)g.VotedCount, // Use VotedCount from stored procedure
+                    VoterCount = (int)g.VotedCount,
                     VotedCount = (int)g.VotedCount,
-                    Percentage = 0 // Will calculate below
+                    Percentage = 0
                 }).ToList();
 
-                // Calculate percentages based on VotedCount
                 var totalVoted = genderStats.Sum(g => g.VoterCount);
                 foreach (var stat in genderStats)
                 {
@@ -104,13 +94,15 @@ namespace MyApp.Repositories
                 }
                 result.GenderStats = genderStats;
 
-                // Get age statistics using stored procedure
+                // Apelează sp_GetRaionAgeCategory
+                // Returnează: AgeCategoryId, VoterCount
+                _logger.LogInformation("Calling sp_GetRaionAgeCategory for RegionId={RegionId}", regionId);
                 var ageStats = await connection.QueryAsync<AgeStatistic>(
                     "sp_GetRaionAgeCategory",
                     new { RegionId = regionId },
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: CommandTimeout);
 
-                // Calculate percentages
                 foreach (var stat in ageStats)
                 {
                     stat.Percentage = totalVoted > 0
@@ -119,23 +111,33 @@ namespace MyApp.Repositories
                 }
                 result.AgeStats = ageStats.ToList();
 
+                // Setează nume și totaluri
+                result.RegionName = genderStats.Any() ? $"Region {regionId}" : "Unknown";
+                result.TotalVoters = totalVoted;
+                result.VotedCount = totalVoted;
+
+                _logger.LogInformation("Completed statistics for RegionId={RegionId}: {TotalVoted} voted, {GenderCount} genders, {AgeCount} age groups",
+                    regionId, totalVoted, genderStats.Count, ageStats.Count());
+                
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting region detailed statistics for RegionId={RegionId}", regionId);
+                _logger.LogError(ex, "Error getting region statistics for RegionId={RegionId}", regionId);
                 throw;
             }
         }
 
         // ============================================================
         // 3. Statistici detaliate pentru LOCALITATE
+        // Apelează: sp_GetLocalitateGender + sp_GetLocalitateAgeCategory
         // ============================================================
         public async Task<DetailedRegionStatistic> GetLocalityDetailedStatisticsAsync(int regionId)
         {
             try
             {
-                using var connection = _connectionFactory.CreateConnection();
+                _logger.LogInformation("Getting locality statistics for RegionId={RegionId}", regionId);
+                await using var connection = (System.Data.Common.DbConnection)_connectionFactory.CreateConnection();
 
                 var result = new DetailedRegionStatistic
                 {
@@ -143,34 +145,13 @@ namespace MyApp.Repositories
                     LastUpdated = DateTime.Now
                 };
 
-                // Get locality name and basic stats
-                var localityInfoSql = @"
-                    SELECT 
-                        r.RegionId,
-                        r.Name AS RegionName,
-                        COUNT(*) AS TotalVoters,
-                        SUM(CASE WHEN avs.AssignedVoterStatus >= 5000 THEN 1 ELSE 0 END) AS VotedCount
-                    FROM AssignedVoterStatistics avs
-                    INNER JOIN dbo.Region r ON avs.RegionId = r.RegionId
-                    WHERE r.RegionId = @RegionId
-                    GROUP BY r.RegionId, r.Name";
-
-                var localityInfo = await connection.QueryFirstOrDefaultAsync<dynamic>(
-                    localityInfoSql,
-                    new { RegionId = regionId });
-
-                if (localityInfo != null)
-                {
-                    result.RegionName = localityInfo.RegionName;
-                    result.TotalVoters = localityInfo.TotalVoters;
-                    result.VotedCount = localityInfo.VotedCount;
-                }
-
-                // Get gender statistics using stored procedure
+                // Apelează sp_GetLocalitateGender
+                // Returnează: Gender (1/2), VoterCount
                 var genderStatsRaw = await connection.QueryAsync<dynamic>(
                     "sp_GetLocalitateGender",
                     new { RegionId = regionId },
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: CommandTimeout);
 
                 var genderStats = genderStatsRaw.Select(g => new GenderStatistic
                 {
@@ -181,11 +162,10 @@ namespace MyApp.Repositories
                         _ => "Necunoscut"
                     },
                     VoterCount = (int)g.VoterCount,
-                    VotedCount = (int)g.VoterCount, // For localitate, VoterCount = VotedCount (already filtered by status >= 5000)
-                    Percentage = 0 // Will calculate below
+                    VotedCount = (int)g.VoterCount,
+                    Percentage = 0
                 }).ToList();
 
-                // Calculate percentages
                 var totalVoted = genderStats.Sum(g => g.VoterCount);
                 foreach (var stat in genderStats)
                 {
@@ -195,13 +175,14 @@ namespace MyApp.Repositories
                 }
                 result.GenderStats = genderStats;
 
-                // Get age statistics using stored procedure
+                // Apelează sp_GetLocalitateAgeCategory
+                // Returnează: AgeCategoryId, VoterCount
                 var ageStats = await connection.QueryAsync<AgeStatistic>(
                     "sp_GetLocalitateAgeCategory",
                     new { RegionId = regionId },
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: CommandTimeout);
 
-                // Calculate percentages
                 foreach (var stat in ageStats)
                 {
                     stat.Percentage = totalVoted > 0
@@ -210,34 +191,61 @@ namespace MyApp.Repositories
                 }
                 result.AgeStats = ageStats.ToList();
 
+                result.RegionName = $"Locality {regionId}";
+                result.TotalVoters = totalVoted;
+                result.VotedCount = totalVoted;
+
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting locality detailed statistics for RegionId={RegionId}", regionId);
+                _logger.LogError(ex, "Error getting locality statistics for RegionId={RegionId}", regionId);
                 throw;
             }
         }
 
         // ============================================================
-        // 4. Obține lista de localități dintr-un raion
+        // 4. Listă localități dintr-un raion
+        // Apelează: sp_GetLocalitiesByRaion
+        // Returnează: RegionId, LocalitateName, RegionTypeId
         // ============================================================
         public async Task<IEnumerable<RegionBasicInfo>> GetLocalitiesByRegionAsync(int regionId)
         {
             try
             {
-                using var connection = _connectionFactory.CreateConnection();
+                _logger.LogInformation("Calling sp_GetLocalitiesByRaion for RegionId={RegionId}", regionId);
+                await using var connection = (System.Data.Common.DbConnection)_connectionFactory.CreateConnection();
+                
+                // Procedura așteaptă @RegionId ca BigInt
+                var parameters = new DynamicParameters();
+                parameters.Add("@RegionId", (long)regionId, DbType.Int64);
+                
                 var results = await connection.QueryAsync<dynamic>(
                     "sp_GetLocalitiesByRaion",
-                    new { RegionId = regionId },
-                    commandType: CommandType.StoredProcedure);
+                    parameters,
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: CommandTimeout);
 
-                return results.Select(r => new RegionBasicInfo
+                var resultsList = results.ToList();
+                _logger.LogInformation("sp_GetLocalitiesByRaion returned {Count} raw rows", resultsList.Count);
+
+                var localities = new List<RegionBasicInfo>();
+                foreach (var r in resultsList)
                 {
-                    RegionId = r.RegionId,
-                    Name = r.LocalitateName,
-                    RegionTypeId = r.RegionTypeId
-                });
+                    int locRegionId = (int)r.RegionId;
+                    string locName = (string)r.LocalitateName;
+                    int locTypeId = (int)r.RegionTypeId;
+                    
+                    localities.Add(new RegionBasicInfo
+                    {
+                        RegionId = locRegionId,
+                        Name = locName,
+                        RegionTypeId = locTypeId
+                    });
+                }
+
+                _logger.LogInformation("GetLocalitiesByRegionAsync for RegionId={RegionId} returned {Count} localities", regionId, localities.Count);
+                return localities;
             }
             catch (Exception ex)
             {
@@ -245,5 +253,5 @@ namespace MyApp.Repositories
                 throw;
             }
         }
-    }
+    }   
 }

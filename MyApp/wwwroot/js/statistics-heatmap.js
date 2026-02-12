@@ -259,7 +259,10 @@ am5.ready(function () {
             series: series,
             chart: {
                 type: 'pie',
-                height: 300
+                height: 300,
+                animations: {
+                    enabled: false
+                }
             },
             labels: labels,
             colors: colors,

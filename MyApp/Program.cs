@@ -1,6 +1,4 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using MyApp.Data;
 using MyApp.Repositories;
 using MyApp.Services;
 
@@ -29,9 +27,8 @@ builder.Services.AddSingleton<IDbConnectionFactory>(sp =>
 
 // Inregistrare Repositories
 builder.Services.AddScoped<IAssignedVoterRepository, AssignedVoterRepository>();
-// Inregistrare DbService pentru proceduri stocate
-builder.Services.AddScoped<DbService>();
 builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
+
 // Memory Cache
 builder.Services.AddMemoryCache();
 
@@ -43,9 +40,6 @@ builder.Services.Configure<HostOptions>(options =>
 {
     options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
 });
-
-
-
 
 var app = builder.Build();
 

@@ -10,8 +10,9 @@ namespace MyApp.Services
         private readonly IMemoryCache _cache;
         private readonly ILogger<StatisticsCacheService> _logger;
 
-        private readonly TimeSpan _updateInterval = TimeSpan.FromSeconds(30); // 30 seconds
-        private readonly TimeSpan _cacheExpiration = TimeSpan.FromSeconds(60); // 1 minute cache expiration
+        private readonly TimeSpan _updateInterval = TimeSpan.FromMinutes(10); // 10 minute
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(15); // 15 minute
+        private readonly TimeSpan _initialDelay = TimeSpan.FromSeconds(10);
 
         public StatisticsCacheService(
             IServiceProvider serviceProvider,
@@ -25,93 +26,57 @@ namespace MyApp.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("📊 Statistics Cache Service STARTED at {time}", DateTime.Now);
+            _logger.LogInformation("📊 Cache Service STARTED");
 
-            await UpdateStatisticsCache();
+            await Task.Delay(_initialDelay, stoppingToken);
+            
+            // Prima încărcare - DOAR lista de regiuni
+            await UpdateRegionListCache();
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    _logger.LogInformation("⏰ Waiting {seconds} seconds until next update...", _updateInterval.TotalSeconds);
-
                     await Task.Delay(_updateInterval, stoppingToken);
-
-                    await UpdateStatisticsCache();
+                    await UpdateRegionListCache();
                 }
                 catch (OperationCanceledException)
                 {
-                    _logger.LogInformation("🛑 Statistics Cache Service is stopping...");
                     break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "❌ ERROR updating statistics cache");
-                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
                 }
             }
 
-            _logger.LogInformation("🛑 Statistics Cache Service STOPPED at {time}", DateTime.Now);
+            _logger.LogInformation("🛑 Cache Service STOPPED");
         }
 
-        private async Task UpdateStatisticsCache()
+        private async Task UpdateRegionListCache()
         {
-            var startTime = DateTime.Now;
-            _logger.LogInformation("🔄 Starting cache update at {time}", startTime);
-
             try
             {
+                var startTime = DateTime.Now;
+                _logger.LogInformation("🔄 Updating region list cache");
+
                 using var scope = _serviceProvider.CreateScope();
                 var statsRepository = scope.ServiceProvider.GetRequiredService<IStatisticsRepository>();
 
-                // Actualizează statistici pentru HEAT MAP (doar regiunile cu cel puțin 1 vot)
-                _logger.LogInformation("  → Updating region statistics for heat map...");
+                // Cache DOAR lista de regiuni (fără detalii)
                 var regionStats = await statsRepository.GetAllRegionsStatisticsAsync();
                 var regionStatsList = regionStats.ToList();
-
                 _cache.Set("RegionStatistics", regionStatsList, _cacheExpiration);
-                _logger.LogInformation("  ✅ Cached {count} regions (with at least 1 vote from database)", regionStatsList.Count);
 
-                // Pre-cache statistici pentru TOATE raioanele (gender + age)
-                _logger.LogInformation("  → Pre-caching gender and age stats for all raions...");
-                int successCount = 0;
-                int failCount = 0;
-
-                foreach (var region in regionStatsList)
-                {
-                    try
-                    {
-                        var detailedStats = await statsRepository.GetRegionDetailedStatisticsAsync(region.RegionId);
-                        _cache.Set($"RegionDetails_{region.RegionId}", detailedStats, _cacheExpiration);
-                        successCount++;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "    ⚠️ Failed to pre-cache region {regionId} ({regionName})", 
-                            region.RegionId, region.Name);
-                        failCount++;
-                    }
-                }
-
-                _logger.LogInformation("  ✅ Pre-cached {success} regions, {fail} failed", successCount, failCount);
-
-                var duration = DateTime.Now - startTime;
-                _logger.LogInformation("✅ Cache update COMPLETED in {seconds} seconds at {time}",
-                    duration.TotalSeconds,
-                    DateTime.Now);
+                var duration = (DateTime.Now - startTime).TotalSeconds;
+                _logger.LogInformation("✅ Cached {count} regions in {seconds:F1}s", 
+                    regionStatsList.Count, duration);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ FAILED to update statistics cache");
-                // Important: don't crash the whole host if DB/stored procedures aren't ready yet.
-                // We'll just log and try again on the next interval.
-                return;
+                _logger.LogError(ex, "❌ Failed to update region list cache");
             }
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("🛑 Statistics Cache Service is stopping gracefully...");
+            _logger.LogInformation("🛑 Cache Service stopping...");
             await base.StopAsync(cancellationToken);
         }
     }

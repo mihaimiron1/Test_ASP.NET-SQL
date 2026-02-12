@@ -22,9 +22,9 @@ namespace MyApp.Services
             // Replace ??? with your database RegionId for each region:
             
             { 5, "MD-AN" },  // Anenii Noi
-            { 6, "MD-BA" },  // Basarabeasca
+            { 6, "MD-BS" },  // Basarabeasca
             { 7, "MD-BR" },  // Briceni
-            { 3, "MD-BS" },  // Bălți
+            { 3, "MD-BA" },  // Bălți
             { 8, "MD-CA" },  // Cahul
             { 10, "MD-CL" },  // Călărași
             { 12, "MD-CM" },  // Cimișlia

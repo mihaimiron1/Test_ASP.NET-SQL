@@ -4,6 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Evită blocarea fișierelor la rebuild -->
+    <GenerateAppHost>true</GenerateAppHost>
+    <UseAppHost>true</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>
@@ -75,6 +78,11 @@
     <EmbeddedResource Update="Resources\Views\Shared\_Layout.ro.resx">
       <Generator></Generator>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\" />
+    <Folder Include="Scripts\" />
   </ItemGroup>
 
 </Project>
