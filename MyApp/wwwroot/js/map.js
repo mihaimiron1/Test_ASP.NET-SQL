@@ -1,4 +1,4 @@
-﻿am5.ready(function () {
+﻿ am5.ready(function () {
     // Creare root
     var root = am5.Root.new("chartdiv");
 

@@ -27,55 +27,9 @@ namespace MyApp.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> HeatMap()
+        public IActionResult HeatMap()
         {
-            try
-            {
-                // Ia din cache sau din repository
-                var regionStats = _cache.Get<List<MyApp.Models.Statistics.RegionVotingStatistic>>("RegionStatistics");
-                
-                if (regionStats == null)
-                {
-                    var stats = await _statsRepository.GetAllRegionsStatisticsAsync();
-                    regionStats = stats.ToList();
-                    
-                    // Cache pentru 10 minute
-                    _cache.Set("RegionStatistics", regionStats, TimeSpan.FromMinutes(10));
-                }
-
-                // Transformă în format pentru hartă
-                var mapData = regionStats
-                    .Select(r =>
-                    {
-                        var mapId = RegionMapIdMapper.GetMapId(r.RegionId);
-                        if (mapId == null) return null;
-
-                        return new
-                        {
-                            RegionId = r.RegionId,
-                            RegionName = r.Name,
-                            RegionNameRu = r.NameRu,
-                            MapId = mapId,
-                            TotalVoters = r.TotalVoters,
-                            LastUpdated = r.LastUpdated
-                        };
-                    })
-                    .Where(x => x != null)
-                    .ToList();
-
-                ViewBag.MapData = JsonSerializer.Serialize(mapData, _jsonOptions);
-                ViewBag.AgeData = "[]"; // Nu mai trimitem date de vârstă globale
-
-                return View();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Eroare la încărcarea HeatMap");
-                ViewBag.MapData = "[]";
-                ViewBag.AgeData = "[]";
-                ViewBag.Error = ex.Message;
-                return View();
-            }
+            return View();
         }
 
         [HttpGet]
@@ -245,6 +199,50 @@ namespace MyApp.Controllers
                 regionCount = regionStats?.Count ?? 0,
                 regions = regionStats?.Select(r => new { r.RegionId, r.Name, r.TotalVoters })
             });
+        }
+
+        // Endpoint pentru încărcarea datelor hărții via AJAX
+        [HttpGet]
+        public async Task<IActionResult> GetMapData()
+        {
+            try
+            {
+                var regionStats = _cache.Get<List<MyApp.Models.Statistics.RegionVotingStatistic>>("RegionStatistics");
+
+                if (regionStats == null)
+                {
+                    _logger.LogInformation("GetMapData: Cache miss, loading from DB...");
+                    var stats = await _statsRepository.GetAllRegionsStatisticsAsync();
+                    regionStats = stats.ToList();
+                    _cache.Set("RegionStatistics", regionStats, TimeSpan.FromMinutes(10));
+                }
+
+                var mapData = regionStats
+                    .Select(r =>
+                    {
+                        var mapId = RegionMapIdMapper.GetMapId(r.RegionId);
+                        if (mapId == null) return null;
+
+                        return new
+                        {
+                            regionId = r.RegionId,
+                            regionName = r.Name,
+                            regionNameRu = r.NameRu,
+                            mapId = mapId,
+                            totalVoters = r.TotalVoters,
+                            lastUpdated = r.LastUpdated
+                        };
+                    })
+                    .Where(x => x != null)
+                    .ToList();
+
+                return Json(mapData);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetMapData");
+                return Json(new List<object>());
+            }
         }
 
         // Endpoint pentru testarea localităților

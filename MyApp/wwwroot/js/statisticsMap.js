@@ -29,12 +29,24 @@
     var regionNameToId = {};
     var regionNames = [];
 
+    // Flag-uri pentru a preveni apeluri simultane / recursive
+    var isLoadingRegion = false;
+    var isLoadingLocality = false;
+    var isLoadingLocalities = false;
+
     function normalizeName(str) {
         return (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     }
 
-    // Procesează datele
-    if (window.mapData && Array.isArray(window.mapData)) {
+    // Procesează datele (refactor pentru a suporta încărcare asincronă)
+    function processMapData() {
+        if (!window.mapData || !Array.isArray(window.mapData)) return;
+
+        // resetează colecțiile în caz că funcția este apelată de mai multe ori
+        regionDataMap = {};
+        regionNameToId = {};
+        regionNames = [];
+
         window.mapData.forEach(function (item) {
             var mapId = item.mapId || item.MapId;
             var regionName = item.regionName || item.RegionName;
@@ -54,7 +66,26 @@
                 regionNames.push({ name: regionName, normalized: normalized, id: mapId });
             }
         });
+
+        // Trigger updates for polygons that already exist so fill states are applied
+        try {
+            Object.keys(regionDataMap).forEach(function (mapId) {
+                var dataItem = polygonSeries.getDataItemById(mapId);
+                if (dataItem) {
+                    dataItem.set("data", regionDataMap[mapId]);
+                    dataItem.set("value", regionDataMap[mapId].RegionId || 1);
+                }
+            });
+        } catch (e) {
+            console.warn('processMapData update error:', e);
+        }
     }
+
+    // Dacă datele sunt deja încărcate, procesează imediat
+    if (window.mapData && Array.isArray(window.mapData) && window.mapData.length) processMapData();
+
+    // Ascultă evenimentul setat din HeatMap.cshtml când fetch-ul s-a terminat
+    window.addEventListener('mapDataLoaded', function () { processMapData(); });
 
     polygonSeries.mapPolygons.template.setAll({
         tooltipText: "{name}",
@@ -70,20 +101,21 @@
     polygonSeries.mapPolygons.template.events.on("dataitemchanged", function (ev) {
         var dataItem = ev.target.dataItem;
         var regionId = dataItem.get("id");
+        var polygon = ev.target;
 
         if (regionDataMap[regionId]) {
-            var polygon = ev.target;
             polygon.set("fill", COLOR_ACTIVE_DATA);
             polygon.set("interactive", true);
             polygon.set("tooltipText", regionDataMap[regionId].RegionName);
         } else {
-            var polygon = ev.target;
             polygon.set("fill", COLOR_INACTIVE);
             polygon.set("interactive", false);
         }
     });
 
     var selectedPolygon = null;
+    var currentRegionId = null;
+    var currentRegionName = null;
 
     function resetSelectedPolygon() {
         if (selectedPolygon) {
@@ -149,12 +181,25 @@
     if (searchForm) searchForm.addEventListener("submit", function (e) { e.preventDefault(); handleSearch(); });
     if (searchInput) searchInput.addEventListener("keyup", function (e) { if (e.key === "Enter") { e.preventDefault(); handleSearch(); } });
 
-    // Stocăm regionId-ul curent pentru a putea reveni la statisticile raionului
-    var currentRegionId = null;
-    var currentRegionName = null;
+    // ─────────────────────────────────────────────────────────────
+    // Setează loading UI (spinner) pentru grafice
+    // ─────────────────────────────────────────────────────────────
+    function setChartsLoading() {
+        var pieChartEl = document.getElementById('region-pie-chart');
+        if (pieChartEl) pieChartEl.innerHTML = '<div class="flex justify-center items-center h-full"><div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>';
 
+        var ageStatsEl = document.getElementById('region-age-stats');
+        if (ageStatsEl) ageStatsEl.innerHTML = '<div class="text-center py-4"><div class="inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div></div>';
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Încarcă statisticile unui raion
+    // ─────────────────────────────────────────────────────────────
     function loadRegionStatistics(regionId, regionName) {
-        // Salvăm datele raionului curent
+        // Previne apeluri simultane
+        if (isLoadingRegion) return;
+        isLoadingRegion = true;
+
         currentRegionId = regionId;
         currentRegionName = regionName;
 
@@ -164,21 +209,21 @@
         var statsPanel = document.getElementById('region-stats');
         if (statsPanel) statsPanel.classList.remove('hidden');
 
+        var ageSection = document.getElementById('age-stats-section');
+        if (ageSection) ageSection.classList.remove('hidden');
+
         var nameEl = document.getElementById('region-name');
         if (nameEl) nameEl.textContent = regionName || "Se încarcă...";
 
-        // Încarcă localitățile imediat
+        setChartsLoading();
+
+        // Încarcă localitățile independent (fără să blocheze graficele)
         loadLocalities(regionId);
-
-        var pieChartEl = document.getElementById('region-pie-chart');
-        if (pieChartEl) pieChartEl.innerHTML = '<div class="flex justify-center items-center h-full"><div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>';
-
-        var ageStatsEl = document.getElementById('region-age-stats');
-        if (ageStatsEl) ageStatsEl.innerHTML = '<div class="text-center py-4"><div class="inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div></div>';
 
         fetch('/Statistics/GetRegionStatisticsForHeatMap?regionId=' + regionId)
             .then(function (response) { return response.json(); })
             .then(function (data) {
+                isLoadingRegion = false;
                 if (data.success) {
                     showRegionStats(data);
                 } else {
@@ -186,42 +231,72 @@
                 }
             })
             .catch(function (error) {
-                console.error('Error:', error);
+                isLoadingRegion = false;
+                console.error('Error loading region stats:', error);
                 showError('Eroare de conexiune');
             });
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Reîncarcă statisticile raionului curent (fără a reîncărca localitățile)
+    // ─────────────────────────────────────────────────────────────
+    function reloadRegionStatistics(regionId, regionName) {
+        // Previne apeluri simultane
+        if (isLoadingRegion) return;
+        isLoadingRegion = true;
+
+        var nameEl = document.getElementById('region-name');
+        if (nameEl) nameEl.textContent = regionName || "Se încarcă...";
+
+        setChartsLoading();
+
+        fetch('/Statistics/GetRegionStatisticsForHeatMap?regionId=' + regionId)
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                isLoadingRegion = false;
+                if (data.success) {
+                    showRegionStats(data);
+                } else {
+                    showError(data.message || 'Eroare la încărcare');
+                }
+            })
+            .catch(function (error) {
+                isLoadingRegion = false;
+                console.error('Error reloading region stats:', error);
+                showError('Eroare de conexiune');
+            });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Încarcă localitățile dintr-un raion în dropdown
+    // ─────────────────────────────────────────────────────────────
     function loadLocalities(regionId) {
         var localitiesDropdown = document.getElementById('localities-dropdown');
         if (!localitiesDropdown) {
-            console.error('❌ Localities dropdown not found!');
+            console.error('Localities dropdown not found!');
             return;
         }
 
-        console.log('📍 Loading localities for regionId:', regionId);
+        // Previne apeluri simultane
+        if (isLoadingLocalities) return;
+        isLoadingLocalities = true;
 
-        // Afișează loading în dropdown
+        // Elimină event listener-ul vechi înainte de a seta unul nou
+        localitiesDropdown.onchange = null;
+
         localitiesDropdown.innerHTML = '<option value="">Se încarcă localități...</option>';
         localitiesDropdown.disabled = true;
 
-        var url = '/Statistics/GetLocalitiesByRegion?regionId=' + regionId;
-        console.log('🌐 Fetching URL:', url);
-
-        fetch(url)
+        fetch('/Statistics/GetLocalitiesByRegion?regionId=' + regionId)
             .then(function (response) {
-                console.log('📡 Response status:', response.status);
                 return response.json();
             })
             .then(function (data) {
-                console.log('📦 Localities response:', data);
-                
+                isLoadingLocalities = false;
+
                 if (data.success && data.localities && data.localities.length > 0) {
-                    console.log('✅ Found', data.localities.length, 'localities');
-                    
-                    // Populează dropdown-ul
                     var options = '<option value="">-- Selectează localitate (' + data.localities.length + ' disponibile) --</option>';
-                    data.localities.forEach(function(loc) {
-                        console.log('  📍 Locality:', loc.name, '| RegionId:', loc.regionId, '| Type:', loc.regionTypeName);
+                    data.localities.forEach(function (loc) {
                         var typeName = loc.regionTypeName || '';
                         var displayName = loc.name + (typeName ? ' (' + typeName + ')' : '');
                         options += '<option value="' + loc.regionId + '">' + displayName + '</option>';
@@ -229,51 +304,48 @@
                     localitiesDropdown.innerHTML = options;
                     localitiesDropdown.disabled = false;
 
-                    // Handler pentru schimbarea selecției
-                    localitiesDropdown.onchange = function() {
-                        console.log('🔄 Dropdown changed, value:', this.value);
+                    // Setează handler-ul O SINGURĂ DATĂ după ce dropdown-ul e populat
+                    localitiesDropdown.onchange = function () {
                         if (this.value) {
                             var selectedText = this.options[this.selectedIndex].text;
-                            console.log('📍 Selected locality:', selectedText);
                             loadLocalityStatistics(parseInt(this.value), selectedText);
                         } else {
-                            // Dacă se selectează opțiunea goală, revenim la statisticile raionului
+                            // Revino la statisticile raionului fără a reîncărca localitățile
                             if (currentRegionId && currentRegionName) {
-                                console.log('🔙 Returning to region stats:', currentRegionName);
                                 reloadRegionStatistics(currentRegionId, currentRegionName);
                             }
                         }
                     };
-                    
-                    console.log('✅ Dropdown populated successfully');
                 } else {
-                    console.warn('⚠️ No localities found or error in response');
-                    // Dacă nu are localități
                     localitiesDropdown.innerHTML = '<option value="">Fără localități disponibile</option>';
                     localitiesDropdown.disabled = true;
                 }
             })
             .catch(function (error) {
-                console.error('❌ Error loading localities:', error);
+                isLoadingLocalities = false;
+                console.error('Error loading localities:', error);
                 localitiesDropdown.innerHTML = '<option value="">Eroare la încărcare</option>';
                 localitiesDropdown.disabled = true;
             });
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Încarcă statisticile unei localități
+    // ─────────────────────────────────────────────────────────────
     function loadLocalityStatistics(localityId, localityName) {
-        // Actualizează titlul
+        // Previne apeluri simultane
+        if (isLoadingLocality) return;
+        isLoadingLocality = true;
+
         var nameEl = document.getElementById('region-name');
         if (nameEl) nameEl.textContent = localityName || "Se încarcă...";
 
-        var pieChartEl = document.getElementById('region-pie-chart');
-        if (pieChartEl) pieChartEl.innerHTML = '<div class="flex justify-center items-center h-full"><div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>';
-
-        var ageStatsEl = document.getElementById('region-age-stats');
-        if (ageStatsEl) ageStatsEl.innerHTML = '<div class="text-center py-4"><div class="inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div></div>';
+        setChartsLoading();
 
         fetch('/Statistics/GetLocalityStatistics?regionId=' + localityId)
             .then(function (response) { return response.json(); })
             .then(function (data) {
+                isLoadingLocality = false;
                 if (data.success) {
                     showRegionStats(data);
                 } else {
@@ -281,36 +353,15 @@
                 }
             })
             .catch(function (error) {
-                console.error('Error:', error);
+                isLoadingLocality = false;
+                console.error('Error loading locality stats:', error);
                 showError('Eroare de conexiune');
             });
     }
 
-    function reloadRegionStatistics(regionId, regionName) {
-        var nameEl = document.getElementById('region-name');
-        if (nameEl) nameEl.textContent = regionName || "Se încarcă...";
-
-        var pieChartEl = document.getElementById('region-pie-chart');
-        if (pieChartEl) pieChartEl.innerHTML = '<div class="flex justify-center items-center h-full"><div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>';
-
-        var ageStatsEl = document.getElementById('region-age-stats');
-        if (ageStatsEl) ageStatsEl.innerHTML = '<div class="text-center py-4"><div class="inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div></div>';
-
-        fetch('/Statistics/GetRegionStatisticsForHeatMap?regionId=' + regionId)
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                if (data.success) {
-                    showRegionStats(data);
-                } else {
-                    showError(data.message || 'Eroare la încărcare');
-                }
-            })
-            .catch(function (error) {
-                console.error('Error:', error);
-                showError('Eroare de conexiune');
-            });
-    }
-
+    // ─────────────────────────────────────────────────────────────
+    // Afișează eroare în panoul de statistici
+    // ─────────────────────────────────────────────────────────────
     function showError(message) {
         var pieChartEl = document.getElementById('region-pie-chart');
         if (pieChartEl) pieChartEl.innerHTML = '<p class="text-red-500 text-center py-8">' + message + '</p>';
@@ -318,27 +369,38 @@
         if (ageStatsEl) ageStatsEl.innerHTML = '';
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Afișează statisticile în UI
+    // ─────────────────────────────────────────────────────────────
     function showRegionStats(data) {
-        // NU suprascrie numele - îl păstrăm pe cel setat anterior din regionName/localityName
-        // Numele corect este deja setat în loadRegionStatistics sau loadLocalityStatistics
-        
         if (document.getElementById('region-pie-chart') && data.genderStats) {
             createPieChart(data.genderStats);
         }
-
         if (document.getElementById('region-age-stats') && data.ageStats) {
             renderAgeStats(data.ageStats);
         }
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Pie Chart (ApexCharts)
+    // ─────────────────────────────────────────────────────────────
     var pieChartInstance = null;
 
     function createPieChart(genderStats) {
-        if (pieChartInstance) pieChartInstance.destroy();
+        // Distruge instanța veche corect
+        if (pieChartInstance) {
+            try { pieChartInstance.destroy(); } catch (e) { console.warn('Chart destroy error:', e); }
+            pieChartInstance = null;
+        }
+
+        var container = document.querySelector("#region-pie-chart");
+        if (!container) return;
+
+        // Resetează containerul înainte de a crea un chart nou
+        container.innerHTML = "";
 
         if (!genderStats || genderStats.length === 0) {
-            var container = document.querySelector("#region-pie-chart");
-            if (container) container.innerHTML = "<p class='text-gray-500 text-center py-8'>Nu există date</p>";
+            container.innerHTML = "<p class='text-gray-500 text-center py-8'>Nu există date</p>";
             return;
         }
 
@@ -346,21 +408,18 @@
         var labels = genderStats.map(function (g) { return g.gender || 'Necunoscut'; });
         var colors = genderStats.map(function (g) { return g.color || '#3b82f6'; });
 
-        var totalVotes = series.reduce(function(a, b) { return a + b; }, 0);
+        var totalVotes = series.reduce(function (a, b) { return a + b; }, 0);
         if (totalVotes === 0) {
-            var container = document.querySelector("#region-pie-chart");
-            if (container) container.innerHTML = "<p class='text-gray-500 text-center py-8'>Nu există voturi</p>";
+            container.innerHTML = "<p class='text-gray-500 text-center py-8'>Nu există voturi</p>";
             return;
         }
 
         var options = {
             series: series,
-            chart: { 
-                type: 'pie', 
-                height: 280, 
-                animations: { 
-                    enabled: false // FĂRĂ ANIMAȚII
-                } 
+            chart: {
+                type: 'pie',
+                height: 280,
+                animations: { enabled: false }
             },
             labels: labels,
             colors: colors,
@@ -382,14 +441,17 @@
             }
         };
 
-        pieChartInstance = new ApexCharts(document.querySelector("#region-pie-chart"), options);
+        pieChartInstance = new ApexCharts(container, options);
         pieChartInstance.render();
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Statistici vârstă (bare progres)
+    // ─────────────────────────────────────────────────────────────
     function renderAgeStats(ageStats) {
         var container = document.getElementById('region-age-stats');
         if (!container) return;
-        
+
         if (!ageStats || ageStats.length === 0) {
             container.innerHTML = '<p class="text-gray-500 text-center py-4">Nu există date</p>';
             return;
@@ -423,6 +485,9 @@
     chart.appear(1000, 100);
 });
 
+// ─────────────────────────────────────────────────────────────
+// Chart vârstă din atribut data (pagina principală)
+// ─────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", function () {
     var ageChartEl = document.getElementById("age-participation-chart");
     if (!ageChartEl) return;
@@ -434,17 +499,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     var ageData = [];
-    try { ageData = JSON.parse(ageDataAttr); } catch (e) { 
+    try { ageData = JSON.parse(ageDataAttr); } catch (e) {
         console.error('Error parsing age data:', e);
-        return; 
+        return;
     }
-    
+
     if (!Array.isArray(ageData) || ageData.length === 0) {
         ageChartEl.innerHTML = '<p class="text-gray-500 text-center py-8">Nu există date pentru categorii de vârstă</p>';
         return;
     }
 
-    var html = ageData.map(function (item, index) {
+    var html = ageData.map(function (item) {
         var name = item.ageCategoryName || item.AgeCategoryName || item.Name || "";
         var percentage = item.percentage || item.Percentage || 0;
         var voterCount = item.voterCount || item.VoterCount || 0;

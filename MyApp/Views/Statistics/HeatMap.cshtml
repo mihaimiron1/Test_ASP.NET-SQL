@@ -1,6 +1,5 @@
 ﻿@{
     ViewData["Title"] = "Statistici Regionale";
-    var mapData = ViewBag.MapData as string ?? "[]";
     var errorMessage = ViewBag.Error as string;
 }
 
@@ -14,15 +13,8 @@
 <!-- Titlu -->
 <div class="mb-8">
     <h3 class="text-3xl font-bold text-gray-800 mb-2">Statistici pe Raioane</h3>
-    <p class="text-gray-600">Selectați un raion pentru a vedea distribuția pe gen și vârstă</p>
+    <p class="text-gray-600">Selectati un raion pentru a vedea distributia pe gen si varsta</p>
 </div>
-
-<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/map.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
-<script src="~/js/geojson/moldovaHigh.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Harta Moldovei -->
     <div class="space-y-4">
@@ -36,19 +28,19 @@
                 </div>
                 <input type="search" id="search"
                        class="block w-full pl-10 pr-20 py-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition"
-                       placeholder="Caută raion..." />
+                       placeholder="Cauta raion..." />
                 <button type="button" id="search-button"
                         class="absolute right-2 top-1/2 -translate-y-1/2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-md text-xs px-3 py-2 transition">
-                    Caută
+                    Cauta
                 </button>
             </div>
             <p id="search-message" class="text-sm text-red-600 text-center mt-2 hidden"></p>
         </form>
 
-        <!-- Hartă -->
-        <div id="chartdiv" class="bg-white rounded-lg shadow-lg border border-gray-200" style="width: 100%; height: 600px;"></div>
-        
-        <!-- Legendă -->
+        <!-- Harta -->
+        <div id="chartdiv" style="width: 100%; height: 600px;"></div>
+
+        <!-- Legenda -->
         <div class="flex justify-center gap-6 text-sm">
             <div class="flex items-center gap-2">
                 <div class="w-4 h-4 rounded shadow-sm" style="background-color: #60a5fa;"></div>
@@ -56,13 +48,13 @@
             </div>
             <div class="flex items-center gap-2">
                 <div class="w-4 h-4 rounded shadow-sm" style="background-color: #e5e7eb;"></div>
-                <span class="text-gray-700">Fără date</span>
+                <span class="text-gray-700">Fara date</span>
             </div>
         </div>
     </div>
 
     <!-- Statistici pentru raionul selectat -->
-    <div id="region-stats" class="bg-white rounded-lg shadow-lg p-6 border border-gray-200 hidden">
+    <div id="region-stats">
         <!-- Header -->
         <div class="flex items-center gap-3 mb-4 pb-4 border-b-2 border-blue-100">
             <svg class="w-7 h-7 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,19 +63,19 @@
             <h4 id="region-name" class="text-2xl font-bold text-gray-800"></h4>
         </div>
 
-        <!-- Dropdown Localități - PRIMUL, deasupra statisticilor -->
+        <!-- Dropdown Localitati - PRIMUL, deasupra statisticilor -->
         <div id="localities-section" class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
             <div class="flex items-center gap-2 mb-3">
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
-                <h5 class="text-lg font-bold text-gray-800">Selectează Localitate</h5>
+                <h5 class="text-lg font-bold text-gray-800">Selecteaza Localitate</h5>
             </div>
             <select id="localities-dropdown" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition cursor-pointer">
-                <option value="">-- Selectează localitate pentru detalii --</option>
+                <option value="">-- Selecteaza localitate pentru detalii --</option>
             </select>
-            <p class="text-xs text-gray-500 mt-2">Selectează o localitate pentru a vedea statisticile detaliate</p>
+            <p class="text-xs text-gray-500 mt-2">Selecteaza o localitate pentru a vedea statisticile detaliate</p>
         </div>
 
         <!-- Grafic Gen -->
@@ -92,40 +84,57 @@
                 <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
-                <h5 class="text-lg font-bold text-gray-800">Distribuție pe Gen</h5>
+                <h5 class="text-lg font-bold text-gray-800">Distributie pe Gen</h5>
             </div>
             <div id="region-pie-chart" style="height: 280px;"></div>
         </div>
 
-        <!-- Categorii Vârstă -->
-        <div class="bg-white rounded-lg shadow-md p-6 sm:p-8 lg:p-10 mb-6 sm:mb-8">
+        <!-- Categorii Varsta -->
+        <div class="p-6 sm:p-8 lg:p-10 mb-6 sm:mb-8">
             <div class="flex items-center gap-2 mb-4">
                 <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <h5 class="text-lg font-bold text-gray-800">Categorii de Vârstă</h5>
+                <h5 class="text-lg font-bold text-gray-800">Categorii de Varsta</h5>
             </div>
             <div id="region-age-stats" class="space-y-2">
-                <!-- Se populează dinamic -->
+                <!-- Se populeaza dinamic -->
             </div>
         </div>
     </div>
 
-    <!-- Mesaj inițial -->
+    <!-- Mesaj initial -->
     <div id="initial-message" class="bg-white rounded-lg shadow-lg p-8 flex items-center justify-center border border-gray-200" style="min-height: 400px;">
         <div class="text-center">
             <svg class="w-20 h-20 mx-auto text-blue-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
             </svg>
-            <p class="text-xl font-semibold text-gray-700 mb-2">Selectați un raion</p>
-            <p class="text-gray-500">Click pe hartă sau căutați un raion</p>
+            <p class="text-xl font-semibold text-gray-700 mb-2">Selectati un raion</p>
+            <p class="text-gray-500">Click pe harta sau cautati un raion</p>
         </div>
     </div>
 </div>
 
-<script>
-    window.mapData = @Html.Raw(mapData);
-    console.log('Map data loaded:', window.mapData.length, 'regions');
-</script>
+@section Scripts {
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/geodata/moldovaHigh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
-<script src="~/js/statisticsMap.js"></script>
+    <script>
+        window.mapData = [];
+        fetch('/Statistics/GetMapData')
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                window.mapData = data;
+                window.dispatchEvent(new Event('mapDataLoaded'));
+            })
+            .catch(function(e) { 
+                console.error('Error loading map data:', e);
+                window.mapData = [];
+            });
+    </script>
+
+    <script src="~/js/statisticsMap.js"></script>
+}
