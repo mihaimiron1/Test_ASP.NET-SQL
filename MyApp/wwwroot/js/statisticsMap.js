@@ -38,6 +38,23 @@
         return (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     }
 
+    function updatePolygonAppearance(polygon) {
+        if (!polygon || !polygon.dataItem) return;
+
+        var dataItem = polygon.dataItem;
+        var mapId = dataItem.get("id");
+
+        if (regionDataMap[mapId]) {
+            polygon.set("fill", COLOR_ACTIVE_DATA);
+            polygon.set("interactive", true);
+            polygon.set("tooltipText", regionDataMap[mapId].RegionName || "{name}");
+        } else {
+            polygon.set("fill", COLOR_INACTIVE);
+            polygon.set("interactive", false);
+            polygon.set("tooltipText", "{name}");
+        }
+    }
+
     // Procesează datele (refactor pentru a suporta încărcare asincronă)
     function processMapData() {
         if (!window.mapData || !Array.isArray(window.mapData)) return;
@@ -76,6 +93,12 @@
                     dataItem.set("value", regionDataMap[mapId].RegionId || 1);
                 }
             });
+
+            // IMPORTANT: if polygons were created before mapData arrived, the "dataitemchanged"
+            // handler already ran when regionDataMap was empty. Refresh appearance explicitly.
+            polygonSeries.mapPolygons.each(function (polygon) {
+                updatePolygonAppearance(polygon);
+            });
         } catch (e) {
             console.warn('processMapData update error:', e);
         }
@@ -99,18 +122,7 @@
     polygonSeries.mapPolygons.template.states.create("active", { fill: COLOR_ACTIVE_CLICK });
 
     polygonSeries.mapPolygons.template.events.on("dataitemchanged", function (ev) {
-        var dataItem = ev.target.dataItem;
-        var regionId = dataItem.get("id");
-        var polygon = ev.target;
-
-        if (regionDataMap[regionId]) {
-            polygon.set("fill", COLOR_ACTIVE_DATA);
-            polygon.set("interactive", true);
-            polygon.set("tooltipText", regionDataMap[regionId].RegionName);
-        } else {
-            polygon.set("fill", COLOR_INACTIVE);
-            polygon.set("interactive", false);
-        }
+        updatePolygonAppearance(ev.target);
     });
 
     var selectedPolygon = null;

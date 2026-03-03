@@ -1,7 +1,7 @@
 ﻿// Models/Statistics/AgeStatistic.cs
 namespace MyApp.Models.Statistics
 {
-    public class AgeStatistic
+    public class ElectionResultByPollingStation
     {
         // Date din SQL
         public int AgeCategoryId { get; set; }

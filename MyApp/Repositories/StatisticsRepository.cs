@@ -97,7 +97,7 @@ namespace MyApp.Repositories
                 // Apelează sp_GetRaionAgeCategory
                 // Returnează: AgeCategoryId, VoterCount
                 _logger.LogInformation("Calling sp_GetRaionAgeCategory for RegionId={RegionId}", regionId);
-                var ageStats = await connection.QueryAsync<AgeStatistic>(
+                var ageStats = await connection.QueryAsync<ElectionResultByPollingStation>(
                     "sp_GetRaionAgeCategory",
                     new { RegionId = regionId },
                     commandType: CommandType.StoredProcedure,
@@ -177,7 +177,7 @@ namespace MyApp.Repositories
 
                 // Apelează sp_GetLocalitateAgeCategory
                 // Returnează: AgeCategoryId, VoterCount
-                var ageStats = await connection.QueryAsync<AgeStatistic>(
+                var ageStats = await connection.QueryAsync<ElectionResultByPollingStation>(
                     "sp_GetLocalitateAgeCategory",
                     new { RegionId = regionId },
                     commandType: CommandType.StoredProcedure,

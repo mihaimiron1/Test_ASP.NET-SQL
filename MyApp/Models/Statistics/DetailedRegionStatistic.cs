@@ -21,7 +21,7 @@ namespace MyApp.Models.Statistics
         public List<GenderStatistic> GenderStats { get; set; } = new();
 
         // Statistici pe vârstă
-        public List<AgeStatistic> AgeStats { get; set; } = new();
+        public List<ElectionResultByPollingStation> AgeStats { get; set; } = new();
 
         public DateTime LastUpdated { get; set; }
 

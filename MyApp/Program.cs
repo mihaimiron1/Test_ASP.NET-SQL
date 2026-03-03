@@ -28,6 +28,7 @@ builder.Services.AddSingleton<IDbConnectionFactory>(sp =>
 // Inregistrare Repositories
 builder.Services.AddScoped<IAssignedVoterRepository, AssignedVoterRepository>();
 builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
+builder.Services.AddScoped<IElectionResultRepository, ElectionResultRepository>();
 
 // Memory Cache
 builder.Services.AddMemoryCache();
