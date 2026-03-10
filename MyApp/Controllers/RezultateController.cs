@@ -9,10 +9,12 @@ namespace MyApp.Controllers
     public class RezultateController : Controller
     {
         private readonly IElectionResultRepository _electionResultRepository;
+        private readonly ILogger<RezultateController> _logger;
 
-        public RezultateController(IElectionResultRepository electionResultRepository)
+        public RezultateController(IElectionResultRepository electionResultRepository, ILogger<RezultateController> logger)
         {
             _electionResultRepository = electionResultRepository;
+            _logger = logger;
         }
             
 
@@ -56,8 +58,10 @@ namespace MyApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetElectionResultsByRaion(long raionId)
         {
+            var sw = Stopwatch.StartNew();
             try
             {
+                _logger.LogInformation("GetElectionResultsByRaion called with RaionId={RaionId}", raionId);
                 var results = await _electionResultRepository.GetResultsByRaionAsync(raionId);
 
                 var top7 = results
@@ -71,11 +75,14 @@ namespace MyApp.Controllers
                     })
                     .ToList();
 
+                _logger.LogInformation("GetElectionResultsByRaion RaionId={RaionId} completed in {ElapsedMs}ms. Rows={Rows}, Top7={Top7}",
+                    raionId, sw.ElapsedMilliseconds, results.Count(), top7.Count);
                 return Json(new { success = true, results = top7 });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Eroare la �nc?rcarea rezultatelor: " + ex.Message });
+                _logger.LogError(ex, "GetElectionResultsByRaion failed for RaionId={RaionId} after {ElapsedMs}ms", raionId, sw.ElapsedMilliseconds);
+                return Json(new { success = false, message = "Eroare la încărcarea rezultatelor: " + ex.Message });
             }
         }
     }

@@ -98,7 +98,7 @@ am5.ready(function () {
             selectedPolygon.set("active", true);
             selectedPolygon.set("fill", COLOR_ACTIVE_CLICK);
         }
-        loadTopParties(regionData.RegionId, regionData.RegionName);
+        loadTopParties(regionData.RegionId, regionData.RegionName, regionData.MapId);
     }
 
     polygonSeries.mapPolygons.template.events.on("click", function (ev) {
@@ -112,23 +112,56 @@ am5.ready(function () {
         }
     });
 
-    function loadTopParties(regionId, regionName) {
+    function loadTopParties(regionId, regionName, mapId) {
+        var numericId = parseInt(regionId, 10);
+
         var nameEl = document.getElementById('region-name');
         if (nameEl) {
-            nameEl.textContent = regionName || "Se încarcă...";
+            if (Number.isFinite(numericId) && numericId > 0) {
+                nameEl.textContent = (regionName || "Raion") + " (ID: " + numericId + ")";
+            } else {
+                nameEl.textContent = regionName || "Se încarcă...";
+            }
+        }
+
+        var idEl = document.getElementById('region-id');
+        if (idEl) {
+            idEl.textContent = (Number.isFinite(numericId) && numericId > 0) ? String(numericId) : "-";
+        }
+
+        var mapIdEl = document.getElementById('region-mapid');
+        if (mapIdEl) {
+            mapIdEl.textContent = mapId ? String(mapId) : "-";
         }
 
         var topPartiesEl = document.getElementById('top-parties-list');
         if (topPartiesEl) {
             topPartiesEl.innerHTML = '<p class="text-gray-500 text-sm text-center">Se încarcă topul partidelor...</p>';
         }
+        if (!Number.isFinite(numericId) || numericId <= 0) {
+            console.error("Invalid raionId:", regionId, "for regionName:", regionName);
+            if (topPartiesEl) {
+                topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">ID raion invalid (nu poate fi mapat din hartă).</p>';
+            }
+            return;
+        }
 
-        fetch('/Rezultate/GetElectionResultsByRaion?raionId=' + regionId)
+        console.log("Loading top parties for raionId=", numericId, "regionName=", regionName);
+
+        fetch('/Rezultate/GetElectionResultsByRaion?raionId=' + encodeURIComponent(numericId))
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (!topPartiesEl) return;
 
-                if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+                if (data && data.success === false) {
+                    console.error("Server error for raionId=", numericId, data);
+                    topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">' +
+                        (data.message || 'Eroare la încărcarea rezultatelor (success=false).') +
+                        '</p>';
+                    return;
+                }
+
+                if (data && data.success && Array.isArray(data.results) && data.results.length > 0) {
                     var html = data.results.map(function (p, index) {
                         var rank = index + 1;
                         var partyCode = p.partyCode || '';
@@ -150,6 +183,7 @@ am5.ready(function () {
 
                     topPartiesEl.innerHTML = html;
                 } else {
+                    console.warn("No results for raionId=", numericId, "response=", data);
                     topPartiesEl.innerHTML = '<p class="text-gray-500 text-sm text-center">Nu există date pentru partide în acest raion.</p>';
                 }
             })
