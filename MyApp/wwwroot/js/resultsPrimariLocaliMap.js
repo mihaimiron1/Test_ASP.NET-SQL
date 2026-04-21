@@ -6,6 +6,8 @@ am5.ready(function () {
     const COLOR_INACTIVE = am5.color(0xe5e7eb);
     const COLOR_ACTIVE_CLICK = am5.color(0x2a5db0);
 
+    var ELECTION_ID = window.primariLocaliElectionId || 10064;
+
     root.setThemes([am5themes_Animated.new(root)]);
 
     var chart = root.container.children.push(
@@ -26,6 +28,7 @@ am5.ready(function () {
     );
 
     var regionDataMap = {};
+    var isLoadingLocalities = false;
 
     function buildRegionData() {
         if (!window.mapData || !Array.isArray(window.mapData)) return;
@@ -98,7 +101,7 @@ am5.ready(function () {
             selectedPolygon.set("active", true);
             selectedPolygon.set("fill", COLOR_ACTIVE_CLICK);
         }
-        loadTopParties(regionData.RegionId, regionData.RegionName, regionData.MapId);
+        onRegionSelected(regionData.RegionId, regionData.RegionName, regionData.MapId);
     }
 
     polygonSeries.mapPolygons.template.events.on("click", function (ev) {
@@ -112,16 +115,12 @@ am5.ready(function () {
         }
     });
 
-    function loadTopParties(regionId, regionName, mapId) {
+    function onRegionSelected(regionId, regionName, mapId) {
         var numericId = parseInt(regionId, 10);
 
         var nameEl = document.getElementById('region-name');
         if (nameEl) {
-            if (Number.isFinite(numericId) && numericId > 0) {
-                nameEl.textContent = (regionName || "Raion") + " (ID: " + numericId + ")";
-            } else {
-                nameEl.textContent = regionName || "Se încarcă...";
-            }
+            nameEl.textContent = (regionName || "Regiune") + (Number.isFinite(numericId) && numericId > 0 ? " (ID: " + numericId + ")" : "");
         }
 
         var idEl = document.getElementById('region-id');
@@ -134,68 +133,58 @@ am5.ready(function () {
             mapIdEl.textContent = mapId ? String(mapId) : "-";
         }
 
-        var topPartiesEl = document.getElementById('top-parties-list');
-        if (topPartiesEl) {
-            topPartiesEl.innerHTML = '<p class="text-gray-500 text-sm text-center">Se încarcă topul partidelor...</p>';
-        }
-        if (!Number.isFinite(numericId) || numericId <= 0) {
-            console.error("Invalid raionId:", regionId, "for regionName:", regionName);
-            if (topPartiesEl) {
-                topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">ID raion invalid (nu poate fi mapat din hartă).</p>';
-            }
-            return;
-        }
+        // Show the panel, hide initial message
+        var initialMsg = document.getElementById('initial-message');
+        if (initialMsg) initialMsg.classList.add('hidden');
 
-        console.log("Loading top parties for raionId=", numericId, "regionName=", regionName);
+        var statsPanel = document.getElementById('region-stats');
+        if (statsPanel) statsPanel.classList.remove('hidden');
 
-        fetch('/Rezultate/GetElectionResultsByRaion?raionId=' + encodeURIComponent(numericId))
+        // Load localities for this region
+        loadLocalities(numericId);
+    }
+
+    function loadLocalities(regionId) {
+        var dropdown = document.getElementById('localities-dropdown');
+        if (!dropdown) return;
+
+        if (isLoadingLocalities) return;
+        isLoadingLocalities = true;
+
+        dropdown.onchange = null;
+        dropdown.innerHTML = '<option value="">Se �ncarc? localit??i...</option>';
+        dropdown.disabled = true;
+
+        fetch('/Rezultate/GetVotedLocalitiesByRegion?electionId=' + ELECTION_ID + '&regionId=' + encodeURIComponent(regionId))
             .then(function (response) { return response.json(); })
             .then(function (data) {
-                if (!topPartiesEl) return;
+                isLoadingLocalities = false;
 
-                if (data && data.success === false) {
-                    console.error("Server error for raionId=", numericId, data);
-                    topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">' +
-                        (data.message || 'Eroare la încărcarea rezultatelor (success=false).') +
-                        '</p>';
-                    return;
-                }
+                if (data.success && data.localities && data.localities.length > 0) {
+                    var options = '<option value="">-- Selecteaz? localitate (' + data.localities.length + ' disponibile) --</option>';
+                    data.localities.forEach(function (loc) {
+                        options += '<option value="' + loc.localityId + '">' + loc.localityName + '</option>';
+                    });
+                    dropdown.innerHTML = options;
+                    dropdown.disabled = false;
 
-                if (data && data.success && Array.isArray(data.results) && data.results.length > 0) {
-                    var html = data.results.map(function (p) {
-                        var partyCode = p.partyCode || '';
-                        var partyName = p.partyName || '';
-                        var colorLogo = p.colorLogo || '';
-                        var votes = p.votes || 0;
-
-                        var logoHtml = colorLogo
-                            ? '<img src="' + colorLogo + '" alt="' + partyCode + '" class="w-8 h-8 rounded object-contain" />'
-                            : '';
-
-                        return '' +
-                            '<div class="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-100 hover:bg-gray-50 transition">' +
-                            '  <div class="flex items-center gap-3 min-w-0">' +
-                            '    <span class="inline-flex items-center justify-center w-8 h-8">' + logoHtml + '</span>' +
-                            '    <div class="flex flex-col min-w-0">' +
-                            '      <span class="text-xs font-semibold text-gray-500">' + (partyCode || '&nbsp;') + '</span>' +
-                            '      <span class="text-sm font-medium text-gray-800 truncate">' + partyName + '</span>' +
-                            '    </div>' +
-                            '  </div>' +
-                            '  <div class="ml-3 text-sm font-semibold text-gray-900 tabular-nums">' + votes.toLocaleString("ro-RO") + '</div>' +
-                            '</div>';
-                    }).join('');
-
-                    topPartiesEl.innerHTML = html;
+                    dropdown.onchange = function () {
+                        if (this.value) {
+                            var selectedText = this.options[this.selectedIndex].text;
+                            console.log("Locality selected: id=", this.value, "name=", selectedText);
+                            // TODO: load locality results here
+                        }
+                    };
                 } else {
-                    console.warn("No results for raionId=", numericId, "response=", data);
-                    topPartiesEl.innerHTML = '<p class="text-gray-500 text-sm text-center">Nu există date pentru partide în acest raion.</p>';
+                    dropdown.innerHTML = '<option value="">F?r? localit??i disponibile</option>';
+                    dropdown.disabled = true;
                 }
             })
             .catch(function (error) {
-                console.error('Error loading top parties:', error);
-                if (topPartiesEl) {
-                    topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">Eroare la încărcarea partidelor.</p>';
-                }
+                isLoadingLocalities = false;
+                console.error('Error loading localities:', error);
+                dropdown.innerHTML = '<option value="">Eroare la �nc?rcare</option>';
+                dropdown.disabled = true;
             });
     }
 

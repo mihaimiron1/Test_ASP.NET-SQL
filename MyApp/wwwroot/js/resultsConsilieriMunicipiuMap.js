@@ -118,9 +118,9 @@ am5.ready(function () {
         var nameEl = document.getElementById('region-name');
         if (nameEl) {
             if (Number.isFinite(numericId) && numericId > 0) {
-                nameEl.textContent = (regionName || "Raion") + " (ID: " + numericId + ")";
+                nameEl.textContent = (regionName || "Municipiu") + " (ID: " + numericId + ")";
             } else {
-                nameEl.textContent = regionName || "Se încarcă...";
+                nameEl.textContent = regionName || "Se �ncarc?...";
             }
         }
 
@@ -136,27 +136,27 @@ am5.ready(function () {
 
         var topPartiesEl = document.getElementById('top-parties-list');
         if (topPartiesEl) {
-            topPartiesEl.innerHTML = '<p class="text-gray-500 text-sm text-center">Se încarcă topul partidelor...</p>';
+            topPartiesEl.innerHTML = '<p class="text-gray-500 text-sm text-center">Se �ncarc? topul partidelor...</p>';
         }
         if (!Number.isFinite(numericId) || numericId <= 0) {
-            console.error("Invalid raionId:", regionId, "for regionName:", regionName);
+            console.error("Invalid municipiuId:", regionId, "for regionName:", regionName);
             if (topPartiesEl) {
-                topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">ID raion invalid (nu poate fi mapat din hartă).</p>';
+                topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">ID municipiu invalid (nu poate fi mapat din hart?).</p>';
             }
             return;
         }
 
-        console.log("Loading top parties for raionId=", numericId, "regionName=", regionName);
+        console.log("Loading consilieri municipali for municipiuId=", numericId, "regionName=", regionName);
 
-        fetch('/Rezultate/GetElectionResultsByRaion?raionId=' + encodeURIComponent(numericId))
+        fetch('/Rezultate/GetElectionResultsByMunicipiuConsilieri?municipiuId=' + encodeURIComponent(numericId))
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (!topPartiesEl) return;
 
                 if (data && data.success === false) {
-                    console.error("Server error for raionId=", numericId, data);
+                    console.error("Server error for municipiuId=", numericId, data);
                     topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">' +
-                        (data.message || 'Eroare la încărcarea rezultatelor (success=false).') +
+                        (data.message || 'Eroare la �nc?rcarea rezultatelor (success=false).') +
                         '</p>';
                     return;
                 }
@@ -165,6 +165,7 @@ am5.ready(function () {
                     var html = data.results.map(function (p) {
                         var partyCode = p.partyCode || '';
                         var partyName = p.partyName || '';
+                        var candidateName = p.candidateName || '';
                         var colorLogo = p.colorLogo || '';
                         var votes = p.votes || 0;
 
@@ -179,6 +180,7 @@ am5.ready(function () {
                             '    <div class="flex flex-col min-w-0">' +
                             '      <span class="text-xs font-semibold text-gray-500">' + (partyCode || '&nbsp;') + '</span>' +
                             '      <span class="text-sm font-medium text-gray-800 truncate">' + partyName + '</span>' +
+                            (candidateName ? '      <span class="text-xs text-gray-600 truncate">' + candidateName + '</span>' : '') +
                             '    </div>' +
                             '  </div>' +
                             '  <div class="ml-3 text-sm font-semibold text-gray-900 tabular-nums">' + votes.toLocaleString("ro-RO") + '</div>' +
@@ -187,14 +189,14 @@ am5.ready(function () {
 
                     topPartiesEl.innerHTML = html;
                 } else {
-                    console.warn("No results for raionId=", numericId, "response=", data);
-                    topPartiesEl.innerHTML = '<p class="text-gray-500 text-sm text-center">Nu există date pentru partide în acest raion.</p>';
+                    console.warn("No results for municipiuId=", numericId, "response=", data);
+                    topPartiesEl.innerHTML = '<p class="text-gray-500 text-sm text-center">Nu exist? date pentru partide �n acest municipiu.</p>';
                 }
             })
             .catch(function (error) {
                 console.error('Error loading top parties:', error);
                 if (topPartiesEl) {
-                    topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">Eroare la încărcarea partidelor.</p>';
+                    topPartiesEl.innerHTML = '<p class="text-red-500 text-sm text-center">Eroare la �nc?rcarea partidelor.</p>';
                 }
             });
     }
